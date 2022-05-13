@@ -1,0 +1,47 @@
+        Occurrences per frame:
+Left Grasper_1 5929
+Left Grasper_2 14
+Needle End_1 5013
+Needle End_2 15
+Needle Mask_1 1761
+Needle Mask_2 2981
+Needle Mask_3 698
+Needle Mask_4 69
+Needle Mask_5 2
+Needle Tip_1 5115
+Needle Tip_2 19
+Right Grasper_1 5767
+Right Grasper_2 19
+Ring_4_1 4459
+Ring_4_2 121
+Ring_5_1 4904
+Ring_5_2 140
+Ring_5_3 1
+Ring_6_1 4323
+Ring_6_2 67
+Ring_6_3 3
+Ring_7_1 4711
+Ring_7_2 159
+Ring_7_3 20
+Ring_7_5 1
+Thread Polyline_1 1650
+Thread Polyline_2 1193
+Thread Polyline_3 1146
+Thread Polyline_4 1029
+Thread Polyline_5 340
+Thread Polyline_6 110
+Thread Polyline_7 35
+Thread Polyline_8 6
+Thread Polyline_9 1
+        Total occurrences:
+Labeled Frames 6072
+Left Grasper 5957
+Needle End 5043
+Needle Mask 10103
+Needle Tip 5153
+Right Grasper 5805
+Ring_4 4701
+Ring_5 5187
+Ring_6 4466
+Ring_7 5094
+Thread Polyline 14252

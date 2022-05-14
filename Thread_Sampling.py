@@ -99,15 +99,15 @@ def main():
     start = time.time()
     
 
-    task = "Knot_Tying"
+    task = "Needle_Passing"
     #I = Iterator(task) 
     absolute_counts["Labeled Frames"]  = 0
     I = Iterator(task)
     I.DrawLabels()
 
-    P = ImageProc(task);
+    #P = ImageProc(task);
     #P.addAllVisData()
-    P.addAllVisDataKT()
+    #P.addAllVisDataKT()
     
     #P.prepareImages()
     #P.addVisData();
@@ -195,6 +195,23 @@ class JSONInterface:
                 polylineSeries.append(instance["points"])    
                 cn.append(instance["className"])
         return cn,polylineSeries
+
+class MPInterface:
+    def __init__(self,MPLoc):
+        self.mp_loc = MPLoc
+        self.transcript = []
+        with open(self.mp_loc) as file:
+            for line in file:
+                #print(line.rstrip())
+                self.transcript.append(line.rstrip())
+    def getMP(self, index):
+        #print("GetMP Matching",index)
+        for i in range(1,len(self.transcript)):
+            l_s = self.transcript[i].split(" ")
+            if(int(l_s[1]) > index):
+                return " ".join(l_s)
+
+
 
 
 class ImageProc:
@@ -1329,6 +1346,12 @@ class Iterator:
         self.imagesDir = os.path.join(self.CWD, task,"images_pre")
         self.labelsDir = os.path.join(self.CWD, task,"annotations_pre")
         self.outputDir = os.path.join(self.CWD, task,"labeled_images")
+        self.mpDir = os.path.join(self.CWD, task, "motion_primitives_combined")
+        
+        self.mpDir_R = os.path.join(self.CWD, task, "motion_primitives_R")
+        
+        self.mpDir_L = os.path.join(self.CWD, task, "motion_primitives_L")
+
         #self.dirIndices = [len(self.CWD)+1, len(self.CWD) + len("output")+1]
 
     def count_and_add(self, className, names):
@@ -1393,7 +1416,9 @@ class Iterator:
         kpNames, KeyPoint = J.getKeyPoints(); # None in KT,
         polyLineNames, polyLines = J.getPolyLines();
 
-        font = ImageFont.truetype("arial.ttf", 12)
+        #font = ImageFont.truetype("arial.ttf", 12)
+        font = ImageFont.truetype("/usr/share/fonts/truetype/freefont/FreeMono.ttf", 14, encoding="unic")
+
         #print(polyLines)
         #return    
         img = Image.open(imageSource)
@@ -1435,22 +1460,25 @@ class Iterator:
 
         img.save(target) # to save
 
-    def DrawSingleImage(self, imageSource, labelSource, target, DEBUG=False):
+    def DrawSingleImage(self, imageSource, labelSource, target, MPI, DEBUG=False):
        
         J = JSONInterface(labelSource)
         polyNames , polygons = J.getPolygons(); # graspers only in KT, 
         kpNames, KeyPoint = J.getKeyPoints(); # None in KT,
         polyLineNames, polyLines = J.getPolyLines();
 
-        font = ImageFont.truetype("arial.ttf", 12)
+        #font = ImageFont.truetype("arial.ttf", 12)
+        font = ImageFont.truetype("/usr/share/fonts/truetype/freefont/FreeMono.ttf", 14, encoding="unic")
         #print(polyLines)
         #return    
         img = Image.open(imageSource)
+        IDX = int(imageSource.split("_")[-1].split(".")[0])
         #draw = ImageDraw.Draw(img)
         draw = ImageDraw.Draw(img, "RGBA")   
 
         self.DrawPolygons(polygons,polyNames,draw,font)
         self.DrawKeyPoints(KeyPoint, kpNames, polygons,draw,font)
+        self.DrawMP(MPI.getMP(IDX),draw,font)
 
         if("Needle End" not in kpNames):
             #print("No needle for", imageSource)
@@ -1612,21 +1640,37 @@ class Iterator:
             draw.ellipse(twoPointList, fill=c)
             draw.text((x-radius*2, y-radius),kpNames[i]+str(i),(255,255,255),font=font)
 
+    def DrawMP(self,MPI_str,draw,font):
+        if(MPI_str is None): 
+            return
+        #for i in range(len(KeyPoint)): # draws each KeyPoint
+        #x = KeyPoint[i][0]
+        #y = KeyPoint[i][1]            
+        x = 50
+        y = 50
+
+        leftUpPoint = (x-radius, y-radius)
+        rightDownPoint = (x+radius, y+radius)
+        twoPointList = [leftUpPoint, rightDownPoint]
+        #c = self.getRBGA(colors[(len(polygons))])
+        #draw.ellipse(twoPointList, fill=c)
+        draw.text((x-radius*2, y-radius),MPI_str,(255,255,255),font=font)
+
     def DrawPolygons(self, polygons,polyNames,draw,font):
         for i in range(len(polygons)):
-            if("Ring" in polyNames[i]):
-                c = self.getRBGA(colors[i])
+            #if("Ring" in polyNames[i]):
+            c = self.getRBGA(colors[i])
                 #print("Poly1:",polygons[i])
-                draw.polygon(polygons[i], fill=c) #,outline='#EA5536')     
+            draw.polygon(polygons[i], fill=c) #,outline='#EA5536')     
                 ########## CENTER POINT
-                x_c, y_c = self.Centroid(polygons[i])          
-                leftUpPoint = (x_c-radius, y_c-radius)
-                rightDownPoint = (x_c+radius, y_c+radius)
-                twoPointList = [leftUpPoint, rightDownPoint]
-                c = self.getRBGA(colors[i+(len(polygons))])
-                draw.ellipse(twoPointList, fill=c)            
+            x_c, y_c = self.Centroid(polygons[i])          
+            leftUpPoint = (x_c-radius, y_c-radius)
+            rightDownPoint = (x_c+radius, y_c+radius)
+            twoPointList = [leftUpPoint, rightDownPoint]
+            c = self.getRBGA(colors[i+(len(polygons))])
+            draw.ellipse(twoPointList,outline=1, fill=c)            
                 # draw.text((x, y),"Sample Text",(r,g,b))
-                draw.text((x_c-radius*2, y_c-radius),polyNames[i]+str(i),(255,255,255),font=font)
+            draw.text((x_c-radius*2, y_c-radius),polyNames[i]+str(i),(255,255,255),font=font)
 
 
     def DrawLabel(self, imageSource, labelSource, target, debug=False):
@@ -1663,7 +1707,8 @@ class Iterator:
             #print(name,polyLineNames_s[name])
 
 
-        font = ImageFont.truetype("arial.ttf", 12)
+        #font = ImageFont.truetype("arial.ttf", 12)
+        font = ImageFont.truetype("/usr/share/fonts/truetype/freefont/FreeMono.ttf", 14, encoding="unic")
         #print(polyLines)
         #return    
         img = Image.open(imageSource)
@@ -1789,7 +1834,14 @@ class Iterator:
                     continue
                 #if "Suturing_S02_T05" not in os.path.basename(root):
                 #    continue
-                print("Proc:", os.path.basename(root),file )
+                print("Proc:", os.path.basename(root),file+".txt" )
+                Bname = os.path.basename(root)
+
+                MP_comb = os.path.join(self.mpDir,Bname+".txt")
+                print(MP_comb)
+                MPI = MPInterface(MP_comb)
+
+
                 '''
                 If we replace "images" by "labels" then the image source should be the same as the label source, 
                 which is the same as the output destination
@@ -1819,7 +1871,7 @@ class Iterator:
                     if("Knot" in self.task):
                         self.DrawSingleImageKT(imageSource,labelSource,outputDest)
                     else:
-                        self.DrawSingleImage(imageSource,labelSource,outputDest)
+                        self.DrawSingleImage(imageSource,labelSource,outputDest, MPI)
 
                 count += 1
                 

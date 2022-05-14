@@ -98,12 +98,12 @@ def main():
     task = "Needle_Passing" #then suturing to b done w/ jigs
     #I = Iterator(task)
     absolute_counts["Labeled Frames"]  = 0
-    #I = Iterator(task)
-    #I.DrawLabels()
+    I = Iterator(task)
+    I.DrawLabels()
 
-    P = ImageProc(task);
+    #P = ImageProc(task);
     #P.addAllVisData()
-    P.addAllVisData()
+    #P.addAllVisData()
     
     #P.prepareImages()
     #P.addVisData();
@@ -1460,6 +1460,12 @@ class Iterator:
         self.imagesDir = os.path.join(self.CWD, task,"images_pre")
         self.labelsDir = os.path.join(self.CWD, task,"annotations_pre")
         self.outputDir = os.path.join(self.CWD, task,"labeled_images")
+        
+        self.mpDir = os.path.join(self.CWD, task, "motion_primitives_combined")
+        
+        self.mpDir_R = os.path.join(self.CWD, task, "motion_primitives_R")
+        
+        self.mpDir_L = os.path.join(self.CWD, task, "motion_primitives_L")
         #self.dirIndices = [len(self.CWD)+1, len(self.CWD) + len("output")+1]
 
     #def getDirectory(self, filename, newDir):
@@ -1508,6 +1514,7 @@ class Iterator:
         
     def dist(self, A, B):
         return math.sqrt( (A[0] - B[0] )**2+( A[1],B[1])**2 )
+    
     def reorderPolyLines(self, polyLines):
         newPolyLines = [];
         endPoints = [];
@@ -1555,7 +1562,8 @@ class Iterator:
             #print(name,polyLineNames_s[name])
 
 
-        font = ImageFont.truetype("arial.ttf", 12)
+        #font = ImageFont.truetype("arial.ttf", 12)
+        font = ImageFont.truetype("/usr/share/fonts/truetype/freefont/FreeMono.ttf", 28, encoding="unic")
         #print(polyLines)
         #return    
         img = Image.open(imageSource)
@@ -1798,10 +1806,17 @@ class Iterator:
                 #if "Suturing_S02_T05" not in os.path.basename(root):
                 #    continue
                 print("Proc:", os.path.basename(root))
+
+                Bname = os.path.basename(root)
+
+                MP_comb = os.path.join(self.mpDir,Bname)
+                print(MP_comb)
+                
                 '''
                 If we replace "images" by "labels" then the image source should be the same as the label source, 
                 which is the same as the output destination
                 '''
+                
                 imageRoot = root
                 #labelRoot = self.getDirectory(root,"labels")
                 labelRoot = root.replace("images_pre","annotations_pre")

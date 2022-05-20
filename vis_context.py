@@ -27,6 +27,7 @@ import shutil
 import time
 from collections import Counter
 from scipy.interpolate import interp1d
+from shapely.geometry import Polygon
 
 global unique_labels
 unique_labels = {}
@@ -302,6 +303,195 @@ class Iterator:
 
         img.save(target) # to save
 
+    def CalcDistances(self, LGX,LGY,RGX,RGY,NX,NY,RingsX,RingsY):
+        LG_Points = []
+        RG_Points = []
+        N_Points = []
+        RingPoints = [[]]
+
+        for i in range(len(LGX)):
+            LG_Points.append(  (LGX[i],LGY[i]) )
+        for i in range(len(RGX)):
+            RG_Points.append(  (RGX[i], RGY[i])   )
+        for i in range(len(NX)):
+            N_Points.append(    (NX[i],NY[i]))
+        
+
+        for j in range(len(RingsX)):
+            RingPoints.append([])
+            for i in range(len(RingsX[j])):
+                RingPoints[j].append(   (RingsX[j][i],RingsY[j][i])  )
+
+
+
+        LG = Polygon(LG_Points)
+        RG = Polygon(RG_Points)
+        Needle = Polygon(N_Points)
+
+        RingsArr = []
+        for j in range(len(RingsX)):
+            RingsArr.append( Polygon(RingPoints[j] ))
+
+        LG_Info = []
+        try:
+            LG_Info = [ LG.distance(Needle), LG.intersects(Needle) ]
+        except Exception as e:
+            #print(e)
+            LG_Info = [e,""]
+        RG_Info = []
+        try:
+            RG_Info = [ RG.distance(Needle), RG.intersects(Needle) ]
+        except Exception as e:
+            #print(e)
+            RG_Info = [e,""]
+        #N_Info = ["None","None"]
+
+        intersections = False
+        interIDX = 0
+        d = []
+        for j in range(len(RingsX)):
+            try:
+                if( Needle.intersects(RingsArr[j])):
+                    intersections = True
+                    interIDX = j
+                d.append(Needle.distance(RingsArr[j]))
+            except:
+                pass
+        
+            
+
+        if(intersections):
+            N_Info = ["Intersecting Ring_"+str(interIDX+4),";"]
+        else:
+            #N_Info = ["No intersections", " ".join([str(s) for s in d])]
+            index_min = np.argmin(d)
+            N_Info = ["", "Needle is d="+str(d[index_min])+" to Ring_"+str(index_min+4) ]
+        '''
+
+        try:
+            # I have 4 rings
+            # let's see if there are any intersections:
+            d = []
+            intersections = False
+            for j in range(len(RingsX)):
+                if( Needle.intersects(RingsArr[j])):
+                    Ints = True
+                d.append(Needle.distance(RingsArr[j]))
+
+            index_min = np.argmin(d)
+            N_Info[0] = "No Inters"
+            N_Info[1] = " d="+str(d[index_min])+" to Ring_"+str(index_min+4)
+
+            if(intersections):
+                for k in range(len(RingsX)):
+                    if( Needle.intersects(RingsArr[k])):
+                        N_Info[0] = "Inter Ring_"+str(k+4)
+                        N_Info[1] = " d=0 to Ring_"+str(k+4)
+                           
+        except Exception as e:
+            print(e)
+        '''
+
+        return LG_Info, RG_Info, N_Info
+        
+        #return (LG.distance(Needle), LG.intersects(Needle)), (RG.distance(Needle), RG.intersects(Needle)), "rings"
+
+    def OrganizePoints(self, polygons,polyNames):
+        LGX = []
+        LGY = []
+        RGX = []
+        RGY = []
+        NX = []
+        NY = []
+        RingsX = [[],[],[],[]]
+        RingsY = [[],[],[],[]]
+        for i in range(len(polyNames)):
+            if("Left Grasper" in polyNames[i]):
+                for k in range(0,len(polygons[i]),2):
+                    LGX.append(polygons[i][k])
+                    LGY.append(polygons[i][k+1])
+            elif("Right Grasper" in polyNames[i]):
+                for k in range(0,len(polygons[i]),2):
+                    RGX.append(polygons[i][k])
+                    RGY.append(polygons[i][k+1])
+            elif("Needle Mask" in polyNames[i]):
+                for k in range(0,len(polygons[i]),2):
+                    NX.append(polygons[i][k])
+                    NY.append(polygons[i][k+1])
+            elif("Ring_4" in polyNames[i]):
+                for k in range(0,len(polygons[i]),2):
+                    RingsX[0].append(polygons[i][k])
+                    RingsY[0].append(polygons[i][k+1])            
+            elif("Ring_5" in polyNames[i]):
+                for k in range(0,len(polygons[i]),2):
+                    RingsX[1].append(polygons[i][k])
+                    RingsY[1].append(polygons[i][k+1])
+            elif("Ring_6" in polyNames[i]):
+                for k in range(0,len(polygons[i]),2):
+                    RingsX[2].append(polygons[i][k])
+                    RingsY[2].append(polygons[i][k+1])
+            elif("Ring_7" in polyNames[i]):
+                for k in range(0,len(polygons[i]),2):
+                    RingsX[3].append(polygons[i][k])
+                    RingsY[3].append(polygons[i][k+1])
+            else:
+                print("Unknown Polygon Class",polyNames[i])
+        return LGX,LGY,RGX,RGY,NX,NY,RingsX,RingsY
+
+    def DrawSingleImageContext(self, imageSource, labelSource, target, MPI, CtxI, DEBUG=False):
+       
+        J = JSONInterface(labelSource)
+        polyNames , polygons = J.getPolygons(); # graspers only in KT, 
+        kpNames, KeyPoint = J.getKeyPoints(); # None in KT,
+        polyLineNames, polyLines = J.getPolyLines();
+
+        font = ImageFont.truetype("/usr/share/fonts/truetype/freefont/FreeMono.ttf", 14, encoding="unic")
+        
+        img = Image.open(imageSource)
+        IDX = int(imageSource.split("_")[-1].split(".")[0])
+        draw = ImageDraw.Draw(img, "RGBA")   
+
+        self.DrawPolygons(polygons,polyNames,draw,font)
+        self.DrawKeyPoints(KeyPoint, kpNames, polygons,draw,font)
+
+        if("Needle End" not in kpNames):
+            #print("No needle for", imageSource)
+            pass
+        else: 
+            needleEnd = KeyPoint[0]
+            for i in range(len(KeyPoint)):
+                if("Needle End" in kpNames[i]):
+                    needleEnd = KeyPoint[i]
+            if(len(polyLines) !=0):     
+                self.DrawThread(polyLines, polyLineNames, needleEnd, draw, font)
+        
+        LGX,LGY,RGX,RGY,NX,NY,RingsX,RingsY = self.OrganizePoints(polygons,polyNames)
+        LG_Message = ""
+        RG_Message = ""
+        N_Message = ""
+        Lens_Message = ""
+
+        LG_Info, RG_Info, N_Info = self.CalcDistances(LGX,LGY,RGX,RGY,NX,NY,RingsX,RingsY) 
+        if(len(LGX) == 0 or len(LGY) == 0):
+            LG_Message = "No Annotation for Left Grasper"
+        else:
+            LG_Message = "L To Needle:" + str(LG_Info[0]) + " Inters:" + str(LG_Info[1])
+        if(len(RGX) == 0 or len(RGY) == 0):
+            RG_Message = "No Annotation for Right Grasper"
+        else:
+            RG_Message = "R To Needle:" + str(RG_Info[0]) + " Inters:" + str(RG_Info[1])
+        
+        if(len(NX) == 0 or len(NY) == 0):
+            N_Message = "No annotation for Needle Or Rings"
+        else:
+            N_Message = str(N_Info[0]) + " : " + str(N_Info[1])
+        
+
+        Lens_Message = "L:" + str(len(LGX) - len(LGY)) + " R:" + str( len(RGX) - len(RGY)) + " N:" + str(len(NX)-len(NY)) 
+        self.DrawTextArr([CtxI.getContext(IDX),LG_Message, RG_Message,N_Message, Lens_Message], draw, font)
+
+        img.save(target) # to save
+
     def DrawSingleImage(self, imageSource, labelSource, target, MPI, CtxI, DEBUG=False):
        
         J = JSONInterface(labelSource)
@@ -323,6 +513,8 @@ class Iterator:
         #self.DrawTextTopCorner(MPI.getMP(IDX),draw,font)
         self.DrawTextTopCorner(CtxI.getContext(IDX), draw, font)
 
+        distances = self.CalcDistances(polygons,polyNames,polyLines,polyLineNames)
+
         if("Needle End" not in kpNames):
             #print("No needle for", imageSource)
             pass
@@ -336,39 +528,6 @@ class Iterator:
 
         img.save(target) # to save
 
-    def DrawSingleImageContext(self, imageSource, labelSource, target, MPI, CtxI, DEBUG=False):
-       
-        J = JSONInterface(labelSource)
-        polyNames , polygons = J.getPolygons(); # graspers only in KT, 
-        kpNames, KeyPoint = J.getKeyPoints(); # None in KT,
-        polyLineNames, polyLines = J.getPolyLines();
-
-        font = ImageFont.truetype("/usr/share/fonts/truetype/freefont/FreeMono.ttf", 14, encoding="unic")
-        
-        img = Image.open(imageSource)
-        IDX = int(imageSource.split("_")[-1].split(".")[0])
-        draw = ImageDraw.Draw(img, "RGBA")   
-
-        self.DrawPolygons(polygons,polyNames,draw,font)
-        self.DrawKeyPoints(KeyPoint, kpNames, polygons,draw,font)
-        #self.DrawTextTopCorner(MPI.getMP(IDX),draw,font) #MP
-        #self.DrawTextTopCorner(CtxI.getContext(IDX), draw, font)
-
-
-        if("Needle End" not in kpNames):
-            #print("No needle for", imageSource)
-            pass
-        else: 
-            needleEnd = KeyPoint[0]
-            for i in range(len(KeyPoint)):
-                if("Needle End" in kpNames[i]):
-                    needleEnd = KeyPoint[i]
-            if(len(polyLines) !=0):     
-                self.DrawThread(polyLines, polyLineNames, needleEnd, draw, font)
-
-        self.DrawTextArr([CtxI.getContext(IDX),"info about graspers", "info about objects"], draw, font)
-
-        img.save(target) # to save
 
     def RenderThread_Arr(self, thread_X, thread_Y, draw, font):        
         kk=0   
@@ -560,6 +719,8 @@ class Iterator:
             for file in files:
                 if "frame" not in file:
                     continue
+                #if "frame_1599" in file or "frame_1264" in file or "frame_0805" in file or "frame_1572" in file:
+                #    continue
                 #if "Suturing_S02_T05" not in os.path.basename(root):
                 #    continue
                 print("Proc:", os.path.basename(root),file+".txt" )

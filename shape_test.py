@@ -20,3 +20,14 @@ area = newPoly.area
 print(area)
 
 
+print("Distance", newPoly.distance(polygon))
+
+
+G_Points = [(0,0),(50,50),(100,0),(50,100)]
+N_point = [(50,25),(0,24),(51,24)]
+G_Poly = Polygon(G_Points)
+N_Poly = Polygon(N_point)
+print("Area G",G_Poly.area)
+print("Area N",N_Poly.area)
+print("Dist", G_Poly.distance(N_Poly))
+print("Intersect?", G_Poly.intersects(N_Poly))

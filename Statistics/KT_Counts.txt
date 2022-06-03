@@ -1,0 +1,36 @@
+        Occurrences per frame:
+Bottom Left Thread_1 2722
+Bottom Left Thread_2 1061
+Bottom Left Thread_3 191
+Bottom Left Thread_4 12
+Bottom Left Thread_5 6
+Bottom Left Thread_6 1
+Bottom Right Thread_1 2694
+Bottom Right Thread_2 809
+Bottom Right Thread_3 398
+Bottom Right Thread_4 117
+Bottom Right Thread_5 18
+Bottom Right Thread_6 9
+Bottom Right Thread_7 1
+Left Grasper_1 3926
+Left Grasper_2 7
+Right Grasper_1 4069
+Right Grasper_2 7
+Top Left Thread_1 3069
+Top Left Thread_2 706
+Top Left Thread_3 79
+Top Left Thread_4 15
+Top Left Thread_5 2
+Top Right Thread_1 2420
+Top Right Thread_2 1117
+Top Right Thread_3 335
+Top Right Thread_4 101
+Top Right Thread_5 14
+        Total occurrences:
+Bottom Left Thread 5501
+Bottom Right Thread 6125
+Labeled Frames 4114
+Left Grasper 3940
+Right Grasper 4083
+Top Left Thread 4788
+Top Right Thread 6133

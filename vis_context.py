@@ -1,53 +1,41 @@
 '''
+6/9/22 1:00
 Date	MTML_position_x	MTML_position_y	MTML_position_z	MTML_orientation_x	MTML_orientation_y	MTML_orientation_z	MTML_orientation_w	MTML_gripper_angle	MTMR_position_x	MTMR_position_y	MTMR_position_z	MTMR_orientation_x	MTMR_orientation_y	MTMR_orientation_z	MTMR_orientation_w	MTMR_gripper_angle	PSML_position_x	PSML_position_y	PSML_position_z	PSML_orientation_x	PSML_orientation_y	PSML_orientation_z	PSML_orientation_w	PSML_gripper_angle	PSMR_position_x	PSMR_position_y	PSMR_position_z	PSMR_orientation_x	PSMR_orientation_y	PSMR_orientation_z	PSMR_orientation_w	PSMR_gripper_angle
 '''
-from asyncio import Task
-from cProfile import label
-from concurrent.futures import thread
+#from asyncio import Task
+#from cProfile import label
+#from concurrent.futures import thread
 import os, sys
-import csv
+#import csv
 import json
 import pathlib
 import math
 from turtle import position
-from cv2 import KeyPoint
+from xmlrpc.client import Boolean
+from cv2 import KeyPoint, threshold
 from matplotlib.colors import cnames
 import numpy as np
 from PIL import Image, ImageDraw, ImageColor,ImageFont
 #import krippendorff
-from collections import Counter, defaultdict
-import matplotlib.pyplot as plt
-from matplotlib.backends.backend_pdf import PdfPages
-from pkg_resources import invalid_marker
-import statistics
-from numpy.linalg import matrix_power
+#from collections import Counter, defaultdict
+#import matplotlib.pyplot as plt
+#from matplotlib.backends.backend_pdf import PdfPages
+#from pkg_resources import invalid_marker
+#import statistics
+#from numpy.linalg import matrix_power
 #from scipy.interpolate import interp1d
 from scipy import interpolate
-import shutil
+#import shutil
 import time
-from collections import Counter
+#from collections import Counter
 from scipy.interpolate import interp1d
 from shapely.geometry import Polygon
-
-global unique_labels
-unique_labels = {}
-
-global invalid_States
-invalid_States = {}
-
-global state_counts
-state_counts = {}
-
-global absolute_counts
-absolute_counts = {}
-
-global prev_lengths
-prev_length = [0,0,0,0];
-global thread_delta
-thread_delta = [0,0,0,0];
+from shapely.geometry import LineString
+from dataclasses import dataclass
 
 global MAX_LEN
 MAX_LEN = 200
+
 
 '''
 Thread_TL_X = []
@@ -93,15 +81,14 @@ def main():
         print("Available task labels: ", available_labels)
         sys.exit()
     '''
-    global state_counts 
-    global absolute_counts
+    
     start = time.time()  
 
     task = "Needle_Passing"
     #I = Iterator(task) 
-    absolute_counts["Labeled Frames"]  = 0
     I = Iterator(task)
-    I.DrawLabelsContext()
+    I.DrawLabelsContextKin()
+    #I.DrawLabelsContext()
     quit();    
    
 '''
@@ -197,6 +184,10 @@ class ContextInterface:
                 #return " ".join(min(0,i-1))
                 return self.transcript[max(0,i-1)]
 
+class Frame:
+    def __init__(self, task):
+        self.task = task
+
 class Iterator:
     def __init__(self, task):
         self.CWD = os.path.dirname(os.path.realpath(__file__))        
@@ -211,6 +202,73 @@ class Iterator:
         self.mpDir_L = os.path.join(self.CWD, task, "motion_primitives_L")
 
         self.ContextDir = os.path.join(self.CWD,task,"transcriptions")
+
+        self.kinDir = os.path.join(self.CWD,task,"kinematics")
+
+        self.context_output = os.path.join(self.CWD,task,"vis_context_labels")
+        self.OS = "windows"
+
+    def getGripperAngle(self):
+        count = 0
+        all_kin_data = {}
+        all_kin_data_L = {}
+        all_kin_data_R = {}
+        for root, dirs, files in os.walk(self.kinDir):
+            for file in files:
+                if("99"  in file):
+                    continue
+                #print(file)
+                
+                #Suturing index 10 is PSML_gripper_angle
+                #Suturing index 21 is PSMR_gripper_angle
+                kin_file =  os.path.join(self.kinDir, file)                
+                PSML_Gripper_Angle = []
+                PSMR_Gripper_Angle = []
+                with open(kin_file) as kin_data:
+                    index=0
+                    for line in kin_data:
+                        if(index==0):
+                            index+=1
+                            continue                        
+                        l_s = line.strip().split(",")
+                        PSML_Gripper_Angle.append(l_s[10])
+                        PSMR_Gripper_Angle.append(l_s[21])
+                        index+=1      
+
+                #print("\tKin_Length: ", kin_len)
+                count=count+1
+                all_kin_data[file] = [PSML_Gripper_Angle,PSMR_Gripper_Angle]
+                all_kin_data_L[file]=PSML_Gripper_Angle
+                all_kin_data_R[file]=PSMR_Gripper_Angle
+        print(count,"files processed!")
+        return all_kin_data,all_kin_data_L,all_kin_data_R
+
+    def getKinLines(self):
+        count = 0
+        all_kin_data = {}
+        for root, dirs, files in os.walk(self.kinDir):
+            for file in files:
+                if("99"  in file):
+                    continue
+                #print(file)
+                kin_file =  os.path.join(self.kinDir, file)
+
+                kin_lines = []
+                with open(kin_file) as kin_data:
+                    for line in kin_data:
+                        kin_lines.append(line.strip())
+
+                i = 0 
+                for line in kin_lines:
+                    line_ = line.replace("\n","")
+                    i=i+1
+                kin_len = i;
+                #print("\tKin_Length: ", kin_len)
+                count=count+1
+                all_kin_data[file] = kin_lines         
+
+        print(count,"files processed!")
+        return all_kin_data
 
     def imageToJSON(self, file):
         fileArr = file.split(".")
@@ -253,14 +311,16 @@ class Iterator:
         return newPolyLines
 
     def DrawSingleImageKT(self, imageSource, labelSource, target, DEBUG=False):
-       
+        F = Frame()
         J = JSONInterface(labelSource)
         polyNames , polygons = J.getPolygons(); # graspers only in KT, 
         kpNames, KeyPoint = J.getKeyPoints(); # None in KT,
         polyLineNames, polyLines = J.getPolyLines();
 
-        #font = ImageFont.truetype("arial.ttf", 12)
-        font = ImageFont.truetype("/usr/share/fonts/truetype/freefont/FreeMono.ttf", 14, encoding="unic")
+        if self.OS == "windows":
+            font = ImageFont.truetype("arial.ttf", 12)
+        else: 
+            font = ImageFont.truetype("/usr/share/fonts/truetype/freefont/FreeMono.ttf", 14, encoding="unic")
 
         #print(polyLines)
         #return    
@@ -302,6 +362,38 @@ class Iterator:
             self.DrawThread(polyLines_BR, polyNames_BR, kp, draw, font)
 
         img.save(target) # to save
+        return Frame
+ 
+    def CalcDistancesSingleThread(self,LGX,LGY,RGX,RGY,ThreadX,ThreadY):
+        LG_Points = []
+        RG_Points = []
+        Thread_Points = []
+        for i in range(len(LGX)):
+            LG_Points.append(  (LGX[i],LGY[i]) )
+        for i in range(len(RGX)):
+            RG_Points.append(  (RGX[i], RGY[i])   )
+        for i in range(len(ThreadX)):
+            Thread_Points.append(  (ThreadX[i], ThreadY[i])   )
+
+        LG = Polygon(LG_Points)
+        RG = Polygon(RG_Points)
+        Thread = LineString(Thread_Points)
+
+        LG_Info = []
+        try:
+            LG_Info = [ LG.distance(Thread), LG.intersects(Thread) ]
+        except Exception as e:
+            #print(e)
+            LG_Info = [e,""]
+
+        RG_Info = []
+        try:
+            RG_Info = [ RG.distance(Thread), RG.intersects(Thread) ]
+        except Exception as e:
+            #print(e)
+            RG_Info = [e,""]
+        
+        return LG_Info,RG_Info
 
     def CalcDistances(self, LGX,LGY,RGX,RGY,NX,NY,RingsX,RingsY):
         LG_Points = []
@@ -330,7 +422,7 @@ class Iterator:
 
         RingsArr = []
         for j in range(len(RingsX)):
-            RingsArr.append( Polygon(RingPoints[j] ))
+            RingsArr.append( Polygon(RingPoints[j]))
 
         LG_Info = []
         try:
@@ -347,7 +439,7 @@ class Iterator:
         #N_Info = ["None","None"]
 
         intersections = False
-        interIDX = 0
+        interIDX = -1
         d = []
         for j in range(len(RingsX)):
             try:
@@ -391,11 +483,10 @@ class Iterator:
         except Exception as e:
             print(e)
         '''
-
-        return LG_Info, RG_Info, N_Info
-        
+        distances = d
+        return LG_Info, RG_Info, N_Info, (interIDX+4), distances
         #return (LG.distance(Needle), LG.intersects(Needle)), (RG.distance(Needle), RG.intersects(Needle)), "rings"
-
+   
     def OrganizePoints(self, polygons,polyNames):
         LGX = []
         LGY = []
@@ -438,14 +529,21 @@ class Iterator:
                 print("Unknown Polygon Class",polyNames[i])
         return LGX,LGY,RGX,RGY,NX,NY,RingsX,RingsY
 
-    def DrawSingleImageContext(self, imageSource, labelSource, target, MPI, CtxI, DEBUG=False):
+    def DrawSingleImageContext(self, imageSource, labelSource, target, MPI, CtxI,CtxI_Pred, DEBUG=False):
        
         J = JSONInterface(labelSource)
         polyNames , polygons = J.getPolygons(); # graspers only in KT, 
         kpNames, KeyPoint = J.getKeyPoints(); # None in KT,
         polyLineNames, polyLines = J.getPolyLines();
+        SingleThreadX = []
+        SingleThreadY = []
 
-        font = ImageFont.truetype("/usr/share/fonts/truetype/freefont/FreeMono.ttf", 14, encoding="unic")
+        if self.OS == "windows":
+            font = ImageFont.truetype("arial.ttf", 12)
+        else: 
+            font = ImageFont.truetype("/usr/share/fonts/truetype/freefont/FreeMono.ttf", 14, encoding="unic")
+
+        #font = ImageFont.truetype("/usr/share/fonts/truetype/freefont/FreeMono.ttf", 14, encoding="unic")
         
         img = Image.open(imageSource)
         IDX = int(imageSource.split("_")[-1].split(".")[0])
@@ -463,44 +561,79 @@ class Iterator:
                 if("Needle End" in kpNames[i]):
                     needleEnd = KeyPoint[i]
             if(len(polyLines) !=0):     
-                self.DrawThread(polyLines, polyLineNames, needleEnd, draw, font)
+                # what is the most useful object we can get out of self.DrawThread that would help us determine intersections with the thread? 
+                SingleThreadX, SingleThreadY = self.DrawThread(polyLines, polyLineNames, needleEnd, draw, font)
         
         LGX,LGY,RGX,RGY,NX,NY,RingsX,RingsY = self.OrganizePoints(polygons,polyNames)
         LG_Message = ""
         RG_Message = ""
+        LG_Thread_Message = ""
+        RG_Thread_Message = ""
+
         N_Message = ""
         Lens_Message = ""
+        # if N internsection is 3, there is no intersection
+        LG_Info, RG_Info, N_Info, N_Intersection, Needle_Ring_Distances = self.CalcDistances(LGX,LGY,RGX,RGY,NX,NY,RingsX,RingsY) 
+        LG_Thread_Info, RG_Thread_Info = self.CalcDistancesSingleThread(LGX, LGY, RGX, RGY, SingleThreadX, SingleThreadY)
+        
+        try:
+            if(len(LGX) == 0 or len(LGY) == 0):
+                LG_Message = "No Annotation for Left Grasper"
+            else:
+                LG_Message = "L To Needle:" + '{0:.2f}'.format(LG_Info[0])  + " Inters:" + str(LG_Info[1])
+            if(len(RGX) == 0 or len(RGY) == 0):
+                RG_Message = "No Annotation for Right Grasper"
+            else:
+                RG_Message = "R To Needle:" + '{0:.2f}'.format(RG_Info[0])  + " Inters:" + str(RG_Info[1])
+            
+            if(len(NX) == 0 or len(NY) == 0):
+                N_Message = "No annotation for Needle Or Rings"
+            else:
+                #N_Message = '{0:.2f}'.format(N_Info[0]) + " : " + '{0:.2f}'.format(N_Info[1]) 
+                N_Message = N_Info[0] + " : " + N_Info[1]
 
-        LG_Info, RG_Info, N_Info = self.CalcDistances(LGX,LGY,RGX,RGY,NX,NY,RingsX,RingsY) 
-        if(len(LGX) == 0 or len(LGY) == 0):
-            LG_Message = "No Annotation for Left Grasper"
-        else:
-            LG_Message = "L To Needle:" + str(LG_Info[0]) + " Inters:" + str(LG_Info[1])
-        if(len(RGX) == 0 or len(RGY) == 0):
-            RG_Message = "No Annotation for Right Grasper"
-        else:
-            RG_Message = "R To Needle:" + str(RG_Info[0]) + " Inters:" + str(RG_Info[1])
-        
-        if(len(NX) == 0 or len(NY) == 0):
-            N_Message = "No annotation for Needle Or Rings"
-        else:
-            N_Message = str(N_Info[0]) + " : " + str(N_Info[1])
-        
+
+            if(len(LGX) == 0 or len(LGY) == 0 or len(SingleThreadX) == 0):
+                LG_Thread_Message = "No Annotation for L_G_Thread"
+            else:
+                LG_Thread_Message = "L To Thread:" + '{0:.2f}'.format(LG_Thread_Info[0])  + " Inters:" + str(LG_Thread_Info[1])
+
+
+            if(len(RGX) == 0 or len(RGY) == 0 or len(SingleThreadX) == 0):
+                RG_Thread_Message = "No Annotation for R_G_Thread"
+            else:
+                RG_Thread_Message = "R To Thread:" + '{0:.2f}'.format(RG_Thread_Info[0])  + " Inters:" + str(RG_Thread_Info[1])
+
+        except Exception as e: 
+            print(e)
 
         Lens_Message = "L:" + str(len(LGX) - len(LGY)) + " R:" + str( len(RGX) - len(RGY)) + " N:" + str(len(NX)-len(NY)) 
-        self.DrawTextArr([CtxI.getContext(IDX),LG_Message, RG_Message,N_Message, Lens_Message], draw, font)
-
+        # use Lens_Message inside first argument of DrawTextArr
+        
+        
+        try:
+            self.DrawTextArr([CtxI_Pred.getContext(IDX)+"-predicted",CtxI.getContext(IDX),LG_Message, RG_Message,LG_Thread_Message,RG_Thread_Message,N_Message ], draw, font)
+        except Exception as e: 
+            self.DrawTextArr(["Shape Exception" ], draw, font)        
         img.save(target) # to save
+        
+        #F.L_G_Dist = LG_Info[0]
+        
+        return LG_Info, RG_Info, N_Intersection, Needle_Ring_Distances,LG_Thread_Info, RG_Thread_Info
 
     def DrawSingleImage(self, imageSource, labelSource, target, MPI, CtxI, DEBUG=False):
-       
+        F = Frame()
         J = JSONInterface(labelSource)
         polyNames , polygons = J.getPolygons(); # graspers only in KT, 
         kpNames, KeyPoint = J.getKeyPoints(); # None in KT,
         polyLineNames, polyLines = J.getPolyLines();
 
-        #font = ImageFont.truetype("arial.ttf", 12)
-        font = ImageFont.truetype("/usr/share/fonts/truetype/freefont/FreeMono.ttf", 14, encoding="unic")
+        
+        if self.OS == "windows":
+            font = ImageFont.truetype("arial.ttf", 12)
+        else: 
+            font = ImageFont.truetype("/usr/share/fonts/truetype/freefont/FreeMono.ttf", 14, encoding="unic")
+
         #print(polyLines)
         #return    
         img = Image.open(imageSource)
@@ -527,7 +660,7 @@ class Iterator:
                 self.DrawThread(polyLines, polyLineNames, needleEnd, draw, font)
 
         img.save(target) # to save
-
+        return F
 
     def RenderThread_Arr(self, thread_X, thread_Y, draw, font):        
         kk=0   
@@ -538,7 +671,9 @@ class Iterator:
         distance = distance/distance[-1]        
         fx, fy = interp1d( distance, thread_X ), interp1d( distance, thread_Y )                
         alpha = np.linspace(0, 1, 10)
+        alpha_context = np.linspace(0, 1, 100)
         x_regular, y_regular = fx(alpha), fy(alpha)
+        x_detailed, y_detailed = fx(alpha_context), fy(alpha_context)
         for jj in range(0,len(thread_X)):           
             draw.line((thread_X[kk],
                     thread_Y[kk],
@@ -554,6 +689,7 @@ class Iterator:
             twoPointList = [leftUpPoint, rightDownPoint]
             #c = self.getRBGA(colors[i+(len(polygons))])
             draw.ellipse(twoPointList, fill=(0,0,0))
+        return x_detailed, y_detailed
     
     def dist(self, A, B):
         return math.sqrt( (A[0] - B[0] )**2+( A[1]-B[1])**2 )
@@ -662,7 +798,8 @@ class Iterator:
                 if(k>=len(polyLines[i])-2): break
             draw.text((polyLines[i][0],polyLines[i][1]),polyLineNames[i]+str(i),(255,255,255),font=font)   
 
-        self.RenderThread_Arr(thread_X, thread_Y, draw, font)
+        ThreadX, ThreadY = self.RenderThread_Arr(thread_X, thread_Y, draw, font)
+        return ThreadX, ThreadY
             
     def DrawKeyPoints(self,KeyPoint, kpNames, polygons,draw,font):
         for i in range(len(KeyPoint)): # draws each KeyPoint
@@ -713,60 +850,237 @@ class Iterator:
                 # draw.text((x, y),"Sample Text",(r,g,b))
             draw.text((x_c-radius*2, y_c-radius),polyNames[i]+str(i),(255,255,255),font=font)
 
-    def DrawLabelsContext(self):
-        count = 0
-        for root, dirs, files in os.walk(self.imagesDir):
-            for file in files:
-                if "frame" not in file:
-                    continue
-                #if "frame_1599" in file or "frame_1264" in file or "frame_0805" in file or "frame_1572" in file:
-                #    continue
-                #if "Suturing_S02_T05" not in os.path.basename(root):
-                #    continue
-                print("Proc:", os.path.basename(root),file+".txt" )
-                Bname = os.path.basename(root)
+    '''Loops through self.imagesDir
+    '''
+    
+    def isGripperClosed(self, frameNumber, L_Gripper_Angle,R_Gripper_Angle):
+        threshold = -0.8
+        '''
+        max_angle_L = max(L_Gripper_Angle)
+        min_angle_L = min(L_Gripper_Angle)
+        max_angle_R = max(R_Gripper_Angle)
+        min_angle_R = min(R_Gripper_Angle)
+        '''
+        L_Gripping = False
+        R_Gripping = False
 
-                MP_comb = os.path.join(self.mpDir,Bname+".txt")
-                #print(MP_comb)
-                MPI = MPInterface(MP_comb)
+        if(frameNumber<len(L_Gripper_Angle) and frameNumber < len(R_Gripper_Angle)):
+            L_Gripping = float(L_Gripper_Angle[frameNumber]) < threshold
+            R_Gripping = float(R_Gripper_Angle[frameNumber]) < threshold
 
-                Context_comb = os.path.join(self.ContextDir,Bname+".txt")
-                #print(MP_comb)
-                CtxI = ContextInterface(Context_comb)
-                '''
-                If we replace "images" by "labels" then the image source should be the same as the label source, 
-                which is the same as the output destination
-                '''
-                imageRoot = root
-                #labelRoot = self.getDirectory(root,"labels")
-                labelRoot = root.replace("images_pre","annotations_pre")
-                #outputRoot =  self.getDirectory(root,"output")
-                outputRoot = root.replace("images_pre","labeled_images")
+        return L_Gripping,R_Gripping
 
-                imageSource = os.path.join(imageRoot, file)
-                labelSource = os.path.join(labelRoot, self.imageToJSON(file))
-                outputDest = os.path.join(outputRoot, file)
+    def DrawLabelsContextKin(self):
+        count = 0      
+        all_kin_data,all_kin_data_L,all_kin_data_R = self.getGripperAngle();
+        for trial in all_kin_data:
+            trial_s = trial.replace(".csv","")
+            trialKin = all_kin_data[trial] # Gripper Angles L and R
+            trialKin_L = all_kin_data_L[trial]
+            trialKin_R = all_kin_data_R[trial]
+            trialImageDir = os.path.join(self.imagesDir,trial_s) 
+            ctxOutput = os.path.join(self.context_output,trial_s+".txt")
+           
+            # walk on a trial folder of frames
+            context = []
+            for root, dirs, files in os.walk(trialImageDir):            
+                for file in files:
+                    if "frame" not in file:
+                        continue
+                    #if "frame_1599" in file or "frame_1264" in file or "frame_0805" in file or "frame_1572" in file:
+                    #    continue
+                    #if "Suturing_S02_T05" not in os.path.basename(root):
+                    #    continue
+                    print("Proc:", trial_s,file+".txt" )
 
-                if(not os.path.isdir(outputRoot)):
-                    path = pathlib.Path(outputRoot)
-                    path.mkdir(parents=True, exist_ok=True)
+                    frameNumber = file.replace("frame_","")
+                    frameNumber = frameNumber.replace(".txt","")
+                    frameNumber = frameNumber.replace(".png","")
+                    frameNumber = int(frameNumber)
 
-                #if os.path.exists(outputDest):
-                #    os.remove(outputDest)
+                    MP_comb = os.path.join(self.mpDir,trial_s+".txt")
+                    #print(MP_comb)
+                    MPI = MPInterface(MP_comb) # turn on for MPs as well
 
-                if not os.path.exists(labelSource):
-                    #print("label not found for ",imageSource)
-                    continue
-                else:
-                    #self.DrawLabel(imageSource,labelSource,outputDest)
-                    if("Knot" in self.task):
-                        self.DrawSingleImageKT(imageSource,labelSource,outputDest)
+                    Context_comb = os.path.join(self.ContextDir,trial_s+".txt")
+                    Pred_Context_comb = os.path.join(self.context_output,trial_s+".txt")
+                    #Pred_Context_comb = os.path.join(self.ContextDir,trial_s+".txt")
+                    #print(MP_comb)
+                    CtxI = ContextInterface(Context_comb)
+                    CtxI_Pred = ContextInterface(Pred_Context_comb)
+
+                    '''
+                    If we replace "images" by "labels" then the image source should be the same as the label source, 
+                    which is the same as the output destination
+                    '''
+
+                    '''
+                    imageRoot = root
+                    labelRoot = root.replace("images_pre","annotations_pre")
+                    outputRoot = root.replace("images_pre","labeled_images")
+                    '''
+                    labelRoot = root.replace("images_pre","annotations_pre")
+                    outputRoot = root.replace("images_pre","labeled_images")
+                    
+                    
+                    imageSource = os.path.join(trialImageDir, file)
+                    labelSource = os.path.join(labelRoot, self.imageToJSON(file))
+                    outputDest = os.path.join(outputRoot, file)
+
+                    if(not os.path.isdir(outputRoot)):
+                        path = pathlib.Path(outputRoot)
+                        path.mkdir(parents=True, exist_ok=True)
+
+                    #if os.path.exists(outputDest):
+                    #    os.remove(outputDest)         
+
+                    if not os.path.exists(labelSource):
+                        #print("label not found for ",imageSource)
+                        continue
                     else:
-                        self.DrawSingleImageContext(imageSource,labelSource,outputDest, MPI, CtxI)
+                        #self.DrawLabel(imageSource,labelSource,outputDest)
+                        if("Knot" in self.task):
+                            self.DrawSingleImageKT(imageSource,labelSource,outputDest)
+                        else:
+                            LG_Info, RG_Info, N_Intersection, Needle_Ring_Distances,LG_Thread_Info, RG_Thread_Info = self.DrawSingleImageContext(imageSource,labelSource,outputDest, MPI, CtxI,CtxI_Pred)
+                    
+                    #LG_Info[1] for intersection with needle
+                    #frameNumber, L_Gripper_Angle, R_Gripper_Angle
 
-                count += 1
-                
-        print(count,"images processed!")
+                    L_Gripping,R_Gripping = self.isGripperClosed(frameNumber,trialKin_L,trialKin_R)
+
+                    
+                    L_G_Touch = 0
+                    L_G_Hold = 0
+                    R_G_Touch = 0
+                    R_G_Hold = 0
+
+                    if(LG_Info[1] and L_Gripping):
+                        L_G_Touch = 0
+                        L_G_Hold = 2
+                    elif(LG_Info[1] and not L_Gripping):
+                        L_G_Touch = 2
+                        L_G_Hold = 0  
+
+                    if(RG_Info[1] and R_Gripping):
+                        R_G_Touch = 0
+                        R_G_Hold = 2
+                    elif(RG_Info[1] and not R_Gripping):
+                        R_G_Touch = 2
+                        R_G_Hold = 0 
+
+                    Extra_State = 0
+
+                    if("Needle" in self.task):
+                        if(N_Intersection != 3):
+                            Extra_State = 2
+                        else:
+                            Extra_State = 0
+
+                    
+                    context.append(str(frameNumber) + " " + str(L_G_Hold) + " " + str( L_G_Touch) + " " + str(R_G_Hold) + " " + str(R_G_Touch) + " " + str(Extra_State))
+                  
+
+                    # we can then use the object Frame to determine the context
+                    # Contact/Hold Context:
+                    # "Nothing", "Ball/Block/Sleeve", "Needle", "Thread", "Fabric/Tissue", "Ring", "Other"
+                    #           0                   1         2         3               4       5       6
+
+
+                    # Needle State in Suturing:
+                    # "Not Touching", "Touching", "In"
+                    #               0       1       2
+                    # Frame# {0,2,3}, {0,2,3}, {0,2,3}, {0,2,3}, {0}
+
+                    # Needle States in Needle Passing
+                    # "Out of", "Touching","In"
+                    #       0           1     2
+                    # Frame# {0,2,3,5},{0,2,3,5},{0,2,3,5},{0,2,3,5},{0,1,2}
+
+                    # Knot States in Knot Tying:
+                    
+                    count += 1
+
+                    
+            #self.save(ctxOutput,context)
+            print(count,"images processed!")
+
+    def DrawLabelsContext(self):
+            count = 0
+            for root, dirs, files in os.walk(self.imagesDir):
+                for file in files:
+                    if "frame" not in file:
+                        continue
+                    #if "frame_1599" in file or "frame_1264" in file or "frame_0805" in file or "frame_1572" in file:
+                    #    continue
+                    #if "Suturing_S02_T05" not in os.path.basename(root):
+                    #    continue
+                    print("Proc:", os.path.basename(root),file+".txt" )
+                    Bname = os.path.basename(root)
+
+                    MP_comb = os.path.join(self.mpDir,Bname+".txt")
+                    #print(MP_comb)
+                    MPI = MPInterface(MP_comb) # turn on for MPs as well
+
+                    Context_comb = os.path.join(self.ContextDir,Bname+".txt")
+                    #print(MP_comb)
+                    CtxI = ContextInterface(Context_comb)
+
+                    '''
+                    If we replace "images" by "labels" then the image source should be the same as the label source, 
+                    which is the same as the output destination
+                    '''
+                    imageRoot = root
+                    #labelRoot = self.getDirectory(root,"labels")
+                    labelRoot = root.replace("images_pre","annotations_pre")
+                    #outputRoot =  self.getDirectory(root,"output")
+                    outputRoot = root.replace("images_pre","labeled_images")
+
+                    imageSource = os.path.join(imageRoot, file)
+                    labelSource = os.path.join(labelRoot, self.imageToJSON(file))
+                    outputDest = os.path.join(outputRoot, file)
+
+                    if(not os.path.isdir(outputRoot)):
+                        path = pathlib.Path(outputRoot)
+                        path.mkdir(parents=True, exist_ok=True)
+
+                    #if os.path.exists(outputDest):
+                    #    os.remove(outputDest)         
+
+                    if not os.path.exists(labelSource):
+                        #print("label not found for ",imageSource)
+                        continue
+                    else:
+                        #self.DrawLabel(imageSource,labelSource,outputDest)
+                        if("Knot" in self.task):
+                            self.DrawSingleImageKT(imageSource,labelSource,outputDest)
+                        else:
+                            LG_Info, RG_Info, N_Intersection, Needle_Ring_Distances,LG_Thread_Info, RG_Thread_Info = self.DrawSingleImageContext(imageSource,labelSource,outputDest, MPI, CtxI)
+                    
+                    
+
+                    # we can then use the object Frame to determine the context
+                    # Contact/Hold Context:
+                    # "Nothing", "Ball/Block/Sleeve", "Needle", "Thread", "Fabric/Tissue", "Ring", "Other"
+                    #           0                   1         2         3               4       5       6
+
+
+                    # Needle State in Suturing:
+                    # "Not Touching", "Touching", "In"
+                    #               0       1       2
+                    # Frame# {0,2,3}, {0,2,3}, {0,2,3}, {0,2,3}, {0}
+
+                    # Needle States in Needle Passing
+                    # "Out of", "Touching","In"
+                    #       0           1     2
+                    # Frame# {0,2,3,5},{0,2,3,5},{0,2,3,5},{0,2,3,5},{0,1,2}
+
+                    # Knot States in Knot Tying:
+                    
+
+                    count += 1
+                    
+            print(count,"images processed!")
 
     def DrawLabels(self):
         count = 0
@@ -819,6 +1133,13 @@ class Iterator:
                 
         print(count,"images processed!")
        
+     
+    def save(self, file, lines):
+        with open(file, 'w+') as f:
+            for item in lines:
+                f.write("%s\n" % item)
 
 main();
+
+
 

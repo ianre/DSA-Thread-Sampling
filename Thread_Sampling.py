@@ -211,9 +211,6 @@ class MPInterface:
             if(int(l_s[1]) > index):
                 return " ".join(l_s)
 
-
-
-
 class ImageProc:
     def __init__(self, task):
 

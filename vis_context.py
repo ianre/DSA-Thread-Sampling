@@ -58,7 +58,7 @@ def main():
         print("Available task labels: ", available_labels)
         sys.exit()
     ''' 
-    task = "Knot_Tying"
+    task = "Suturing"
     #I = Iterator(task) 
     I = Iterator(task)
     I.DrawLabelsContextKin()
@@ -619,17 +619,19 @@ class Iterator:
         LG_Thread_Info_Top, RG_Thread_Info_Top = self.CalcDistancesSingleThread(LGX, LGY, RGX, RGY, SingleThreadXTop, SingleThreadYTop)
         LG_Thread_Info_Bottom, RG_Thread_Info_Bottom = self.CalcDistancesSingleThread(LGX, LGY, RGX, RGY, SingleThreadXBottom, SingleThreadYBottom)
         
+        if(not LG_Thread_Info_Top[1] and LG_Thread_Info_Bottom[1] and not RG_Thread_Info_Top[1] and not RG_Thread_Info_Bottom[1]):
+            print("stop here")
         try:
             if(len(LG_Thread_Info_Top) == 0 or len(LG_Thread_Info_Bottom) == 0):
                 LG_Message = "No Annotation for Left Grasper"
             else:
-                LG_Message = "L To Top Thread:" + '{0:.2f}'.format(LG_Thread_Info_Top[0])  + " Inters:" + str(LG_Thread_Info_Top[1])
+                LG_Message =    "L To Top Thread:   " + '{0:.2f}'.format(LG_Thread_Info_Top[0])  + " Inters:" + str(LG_Thread_Info_Top[1])
                 LG_Message += "\nL To Bottom Thread:" + '{0:.2f}'.format(LG_Thread_Info_Bottom[0])  + " Inters:" + str(LG_Thread_Info_Bottom[1])
 
             if(len(RG_Thread_Info_Top) == 0 or len(RG_Thread_Info_Bottom) == 0):
                 RG_Message = "No Annotation for Right Grasper"
             else:
-                RG_Message = "\nR To Top Thread:" + '{0:.2f}'.format(RG_Thread_Info_Top[0])  + " Inters:" + str(RG_Thread_Info_Top[1])
+                RG_Message =  "\nR To Top Thread:   " + '{0:.2f}'.format(RG_Thread_Info_Top[0])  + " Inters:" + str(RG_Thread_Info_Top[1])
                 RG_Message += "\nR To Bottom Thread:" + '{0:.2f}'.format(RG_Thread_Info_Bottom[0])  + " Inters:" + str(RG_Thread_Info_Bottom[1])
             '''
             if(len(LGX) == 0 or len(LGY) == 0 or len(SingleThreadX) == 0):
@@ -650,7 +652,7 @@ class Iterator:
         Lens_Message = "L:" + str(len(LGX) - len(LGY)) + " R:" + str( len(RGX) - len(RGY)) + " N:" + str(len(NX)-len(NY)) 
         try:
             #store = [CtxI_Pred.getContext(IDX)+"-predicted",CtxI.getContext(IDX),LG_Message, RG_Message ]
-            self.DrawTextArr([CtxI_Pred.getContext(IDX)+"-predicted",CtxI.getContext(IDX),LG_Message, RG_Message ], draw, font)
+            self.DrawTextArr([CtxI_Pred.getContext(IDX)+"-predicted",CtxI.getContext(IDX),LG_Message, RG_Message], draw, font)
         except Exception as e: 
             print(e)
             self.DrawTextArr(["Shape Exception" ], draw, font)        
@@ -1096,6 +1098,7 @@ class Iterator:
                     print("Proc:", task_subject_trial, file+".txt" )
                     frameNumber = int(file.replace("frame_","").replace(".txt","").replace(".png",""))
                     MP_comb = os.path.join(self.mpDir,task_subject_trial+".txt")
+                    
 
                     #! turn on for MPs
                     MPI = MPInterface(MP_comb)
@@ -1127,7 +1130,7 @@ class Iterator:
                             #self.DrawSingleImageKT(imageSource,labelSource,outputDest)
                             #! LG_Thread_Info, RG_Thread_Info contains intersections between graspers and the nearest thread top or bottom (combined left and right)
                             LG_Thread_Info_Top,RG_Thread_Info_Top, LG_Thread_Info_Bottom,RG_Thread_Info_Bottom = self.DrawSingleImageContextKT(imageSource,labelSource,outputDest, MPI, CtxI,CtxI_Pred)
-
+                            
                         else:
                             #! LG_Info, RG_Info, N_Intersection, Needle_Ring_Distances,LG_Thread_Info, RG_Thread_Info
                             LG_Info, RG_Info, N_Intersection, Needle_Ring_Distances,LG_Thread_Info, RG_Thread_Info = self.DrawSingleImageContext(imageSource,labelSource,outputDest, MPI, CtxI,CtxI_Pred)
@@ -1179,7 +1182,9 @@ class Iterator:
                         # Knot States in Knot Tying:
                         #"N/A", "Thread Wrapped", "Loose", "Tight"
                         #    0,                1,       2,       3
-                        L_Gripping,R_Gripping = self.isGripperClosed(frameNumber,trialKin_L,trialKin_R)                    
+                        L_Gripping,R_Gripping = self.isGripperClosed(frameNumber,trialKin_L,trialKin_R) 
+                        #print("\t","LG_Thread_Info_Top",LG_Thread_Info_Top[1],"LG_Thread_Info_Bottom",LG_Thread_Info_Bottom[1],"RG_Thread_Info_Top",RG_Thread_Info_Top[1],"RG_Thread_Info_Bottom",RG_Thread_Info_Bottom[1])   
+                        #print("\t",frameNumber,": L_Gripping",L_Gripping,"R_Gripping",R_Gripping)                   
                         L_G_Touch = 0
                         L_G_Hold = 0
                         R_G_Touch = 0
@@ -1198,9 +1203,10 @@ class Iterator:
                             R_G_Hold = 0 
                         Extra_State = 0                                       
                         context.append(str(frameNumber) + " " + str(L_G_Hold) + " " + str( L_G_Touch) + " " + str(R_G_Hold) + " " + str(R_G_Touch) + " " + str(Extra_State))
+                        #print("\t",str(frameNumber) + " " + str(L_G_Hold) + " " + str( L_G_Touch) + " " + str(R_G_Hold) + " " + str(R_G_Touch) + " " + str(Extra_State),"\n")  
                     count += 1
 
-            #self.save(ctxOutput,context)
+            self.save(ctxOutput,context)
             print(count,"images processed!")
 
     def GenerateContextLine(self,L_G_Touch,L_G_Hold,R_G_Touch,R_G_Hold,L_Gripping,R_Gripping,N_Intersection,frameNumber):

@@ -1,1 +1,181 @@
-{"metadata":{"lastAction":{"email":"labeler212@cogitotech.in","timestamp":1638860912985},"width":640,"height":480,"name":"frame_0002.png","projectId":52105,"isPredicted":false,"status":"Completed","pinned":false,"annotatorEmail":null,"qaEmail":null},"comments":[],"tags":[],"instances":[{"type":"polyline","classId":993783,"probability":100,"points":[278.53,382.61,252.71,402.48,237.79,412.76,226.04,419.51,205.75,430.26,194.18,436.28,184.08,441],"groupId":1,"pointLabels":{},"locked":false,"visible":true,"attributes":[],"trackingId":null,"error":null,"createdAt":"2021-12-07T07:11:00.352Z","createdBy":{"email":"labeler212@cogitotech.in","role":"Admin"},"creationType":"Manual","updatedAt":"2021-12-07T07:11:00.352Z","updatedBy":{"email":"labeler212@cogitotech.in","role":"Admin"},"className":"Bottom Left Thread"},{"type":"polyline","classId":993783,"probability":100,"points":[335,330.93,332.36,328.13,327.58,328.95,321.16,332.58,317.7,335.54,314.89,341.97,314.07,352.19],"groupId":1,"pointLabels":{},"locked":false,"visible":true,"attributes":[],"trackingId":null,"error":null,"createdAt":"2021-12-07T07:10:50.224Z","createdBy":{"email":"labeler212@cogitotech.in","role":"Admin"},"creationType":"Manual","updatedAt":"2021-12-07T07:10:50.224Z","updatedBy":{"email":"labeler212@cogitotech.in","role":"Admin"},"className":"Bottom Left Thread"},{"type":"polyline","classId":993784,"probability":100,"points":[327.2,315.2,314.51,312.85,285.25,303.21,265.26,295.63,248.99,286.07,238.66,278.84,230.06,269.71],"groupId":0,"pointLabels":{},"locked":false,"visible":true,"attributes":[],"trackingId":null,"error":null,"createdAt":"2021-12-07T07:10:27.761Z","createdBy":{"email":"labeler212@cogitotech.in","role":"Admin"},"creationType":"Manual","updatedAt":"2021-12-07T07:10:27.761Z","updatedBy":{"email":"labeler212@cogitotech.in","role":"Admin"},"className":"Bottom Right Thread"},{"type":"polyline","classId":987624,"probability":100,"points":[367.49,188.72,376.02,192.03,407.38,198.57,417.02,201.64,435.61,211.16,448.57,219.19,468.25,233.71,492.29,257.28,502.9,268.52,504.8,269.33],"groupId":0,"pointLabels":{},"locked":false,"visible":true,"attributes":[],"trackingId":null,"error":null,"createdAt":"2021-12-07T07:09:26.729Z","createdBy":{"email":"labeler212@cogitotech.in","role":"Admin"},"creationType":"Manual","updatedAt":"2021-12-07T07:09:26.729Z","updatedBy":{"email":"labeler212@cogitotech.in","role":"Admin"},"className":"Top Right Thread"},{"type":"polyline","classId":987623,"probability":100,"points":[353.12,175.2,350.75,172.83,341.77,172.83,335.15,174.25,325.23,178.51,313.41,188.91,292.14,205.45,278.66,213.25],"groupId":0,"pointLabels":{},"locked":false,"visible":true,"attributes":[],"trackingId":null,"error":null,"createdAt":"2021-12-07T07:09:08.722Z","createdBy":{"email":"labeler212@cogitotech.in","role":"Admin"},"creationType":"Manual","updatedAt":"2021-12-07T07:09:08.722Z","updatedBy":{"email":"labeler212@cogitotech.in","role":"Admin"},"className":"Top Left Thread"},{"type":"polygon","classId":325697,"probability":100,"points":[271.68,324.35,283.23,362.27,286.98,369.3,295.89,369.77,304.85,367.99,319.44,368.3,322.18,366.78,321.57,362.82,315.49,356.75,309.41,343.37,302.73,335.77,295.74,329.69,290.04,326.09,288.14,323.01,285.4,320.88,281.89,320.3,277.43,320.44,272.83,322.05],"groupId":0,"pointLabels":{},"locked":true,"visible":true,"attributes":[],"trackingId":null,"error":null,"createdAt":"2021-06-30T04:57:00.376Z","createdBy":{"email":"labeler210@cogitotech.in","role":"Admin"},"creationType":"Manual","updatedAt":"2021-06-30T04:57:31.808Z","updatedBy":{"email":"labeler210@cogitotech.in","role":"Admin"},"className":"Left Grasper"},{"type":"polygon","classId":325698,"probability":100,"points":[385.66,290.95,373.13,330.98,367.99,333.39,362.82,333.36,355.28,330.98,351.7,328.99,343.37,326.61,325.34,325.03,324.21,322.31,325.79,319.13,327.38,318.68,328.06,312.78,331.24,311.19,344.56,307.07,350.55,295.89,354.71,290.95,360.69,286.79,371.18,284.35,377.14,284.98,382.54,287.83],"groupId":0,"pointLabels":{},"locked":true,"visible":true,"attributes":[],"trackingId":null,"error":null,"createdAt":"2021-06-30T04:56:06.314Z","createdBy":{"email":"labeler210@cogitotech.in","role":"Admin"},"creationType":"Manual","updatedAt":"2021-06-30T04:56:45.410Z","updatedBy":{"email":"labeler210@cogitotech.in","role":"Admin"},"className":"Right Grasper"}]}
+{
+  "metadata": {
+    "lastAction": {
+      "email": "labeler212@cogitotech.in",
+      "timestamp": 1638860912985
+    },
+    "width": 640,
+    "height": 480,
+    "name": "frame_0002.png",
+    "projectId": 52105,
+    "isPredicted": false,
+    "status": "Completed",
+    "pinned": false,
+    "annotatorEmail": null,
+    "qaEmail": null
+  },
+  "comments": [],
+  "tags": [],
+  "instances": [
+    {
+      "type": "polyline",
+      "classId": 993783,
+      "probability": 100,
+      "points": [
+        278.53, 382.61, 252.71, 402.48, 237.79, 412.76, 226.04, 419.51, 205.75,
+        430.26, 194.18, 436.28, 184.08, 441
+      ],
+      "groupId": 1,
+      "pointLabels": {},
+      "locked": false,
+      "visible": true,
+      "attributes": [],
+      "trackingId": null,
+      "error": null,
+      "createdAt": "2021-12-07T07:11:00.352Z",
+      "createdBy": { "email": "labeler212@cogitotech.in", "role": "Admin" },
+      "creationType": "Manual",
+      "updatedAt": "2021-12-07T07:11:00.352Z",
+      "updatedBy": { "email": "labeler212@cogitotech.in", "role": "Admin" },
+      "className": "Bottom Left Thread"
+    },
+    {
+      "type": "polyline",
+      "classId": 993783,
+      "probability": 100,
+      "points": [
+        335, 330.93, 332.36, 328.13, 327.58, 328.95, 321.16, 332.58, 317.7,
+        335.54, 314.89, 341.97, 314.07, 352.19
+      ],
+      "groupId": 1,
+      "pointLabels": {},
+      "locked": false,
+      "visible": true,
+      "attributes": [],
+      "trackingId": null,
+      "error": null,
+      "createdAt": "2021-12-07T07:10:50.224Z",
+      "createdBy": { "email": "labeler212@cogitotech.in", "role": "Admin" },
+      "creationType": "Manual",
+      "updatedAt": "2021-12-07T07:10:50.224Z",
+      "updatedBy": { "email": "labeler212@cogitotech.in", "role": "Admin" },
+      "className": "Bottom Left Thread"
+    },
+    {
+      "type": "polyline",
+      "classId": 993784,
+      "probability": 100,
+      "points": [
+        327.2, 315.2, 314.51, 312.85, 285.25, 303.21, 265.26, 295.63, 248.99,
+        286.07, 238.66, 278.84, 230.06, 269.71
+      ],
+      "groupId": 0,
+      "pointLabels": {},
+      "locked": false,
+      "visible": true,
+      "attributes": [],
+      "trackingId": null,
+      "error": null,
+      "createdAt": "2021-12-07T07:10:27.761Z",
+      "createdBy": { "email": "labeler212@cogitotech.in", "role": "Admin" },
+      "creationType": "Manual",
+      "updatedAt": "2021-12-07T07:10:27.761Z",
+      "updatedBy": { "email": "labeler212@cogitotech.in", "role": "Admin" },
+      "className": "Bottom Right Thread"
+    },
+    {
+      "type": "polyline",
+      "classId": 987624,
+      "probability": 100,
+      "points": [
+        367.49, 188.72, 376.02, 192.03, 407.38, 198.57, 417.02, 201.64, 435.61,
+        211.16, 448.57, 219.19, 468.25, 233.71, 492.29, 257.28, 502.9, 268.52,
+        504.8, 269.33
+      ],
+      "groupId": 0,
+      "pointLabels": {},
+      "locked": false,
+      "visible": true,
+      "attributes": [],
+      "trackingId": null,
+      "error": null,
+      "createdAt": "2021-12-07T07:09:26.729Z",
+      "createdBy": { "email": "labeler212@cogitotech.in", "role": "Admin" },
+      "creationType": "Manual",
+      "updatedAt": "2021-12-07T07:09:26.729Z",
+      "updatedBy": { "email": "labeler212@cogitotech.in", "role": "Admin" },
+      "className": "Top Right Thread"
+    },
+    {
+      "type": "polyline",
+      "classId": 987623,
+      "probability": 100,
+      "points": [
+        353.12, 175.2, 350.75, 172.83, 341.77, 172.83, 335.15, 174.25, 325.23,
+        178.51, 313.41, 188.91, 292.14, 205.45, 278.66, 213.25
+      ],
+      "groupId": 0,
+      "pointLabels": {},
+      "locked": false,
+      "visible": true,
+      "attributes": [],
+      "trackingId": null,
+      "error": null,
+      "createdAt": "2021-12-07T07:09:08.722Z",
+      "createdBy": { "email": "labeler212@cogitotech.in", "role": "Admin" },
+      "creationType": "Manual",
+      "updatedAt": "2021-12-07T07:09:08.722Z",
+      "updatedBy": { "email": "labeler212@cogitotech.in", "role": "Admin" },
+      "className": "Top Left Thread"
+    },
+    {
+      "type": "polygon",
+      "classId": 325697,
+      "probability": 100,
+      "points": [
+        271.68, 324.35, 283.23, 362.27, 286.98, 369.3, 295.89, 369.77, 304.85,
+        367.99, 319.44, 368.3, 322.18, 366.78, 321.57, 362.82, 315.49, 356.75,
+        309.41, 343.37, 302.73, 335.77, 295.74, 329.69, 290.04, 326.09, 288.14,
+        323.01, 285.4, 320.88, 281.89, 320.3, 277.43, 320.44, 272.83, 322.05
+      ],
+      "groupId": 0,
+      "pointLabels": {},
+      "locked": true,
+      "visible": true,
+      "attributes": [],
+      "trackingId": null,
+      "error": null,
+      "createdAt": "2021-06-30T04:57:00.376Z",
+      "createdBy": { "email": "labeler210@cogitotech.in", "role": "Admin" },
+      "creationType": "Manual",
+      "updatedAt": "2021-06-30T04:57:31.808Z",
+      "updatedBy": { "email": "labeler210@cogitotech.in", "role": "Admin" },
+      "className": "Left Grasper"
+    },
+    {
+      "type": "polygon",
+      "classId": 325698,
+      "probability": 100,
+      "points": [
+        385.66, 290.95, 373.13, 330.98, 367.99, 333.39, 362.82, 333.36, 355.28,
+        330.98, 351.7, 328.99, 343.37, 326.61, 325.34, 325.03, 324.21, 322.31,
+        325.79, 319.13, 327.38, 318.68, 328.06, 312.78, 331.24, 311.19, 344.56,
+        307.07, 350.55, 295.89, 354.71, 290.95, 360.69, 286.79, 371.18, 284.35,
+        377.14, 284.98, 382.54, 287.83
+      ],
+      "groupId": 0,
+      "pointLabels": {},
+      "locked": true,
+      "visible": true,
+      "attributes": [],
+      "trackingId": null,
+      "error": null,
+      "createdAt": "2021-06-30T04:56:06.314Z",
+      "createdBy": { "email": "labeler210@cogitotech.in", "role": "Admin" },
+      "creationType": "Manual",
+      "updatedAt": "2021-06-30T04:56:45.410Z",
+      "updatedBy": { "email": "labeler210@cogitotech.in", "role": "Admin" },
+      "className": "Right Grasper"
+    }
+  ]
+}

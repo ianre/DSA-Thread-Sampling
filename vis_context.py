@@ -2,11 +2,7 @@
 6/9/22 1:00
 Date	MTML_position_x	MTML_position_y	MTML_position_z	MTML_orientation_x	MTML_orientation_y	MTML_orientation_z	MTML_orientation_w	MTML_gripper_angle	MTMR_position_x	MTMR_position_y	MTMR_position_z	MTMR_orientation_x	MTMR_orientation_y	MTMR_orientation_z	MTMR_orientation_w	MTMR_gripper_angle	PSML_position_x	PSML_position_y	PSML_position_z	PSML_orientation_x	PSML_orientation_y	PSML_orientation_z	PSML_orientation_w	PSML_gripper_angle	PSMR_position_x	PSMR_position_y	PSMR_position_z	PSMR_orientation_x	PSMR_orientation_y	PSMR_orientation_z	PSMR_orientation_w	PSMR_gripper_angle
 '''
-#from asyncio import Task
-#from cProfile import label
-#from concurrent.futures import thread
 import os, sys
-#import csv
 import json
 import pathlib
 import math
@@ -16,39 +12,19 @@ from cv2 import KeyPoint, threshold
 from matplotlib.colors import cnames
 import numpy as np
 from PIL import Image, ImageDraw, ImageColor,ImageFont
-#import krippendorff
-#from collections import Counter, defaultdict
-#import matplotlib.pyplot as plt
-#from matplotlib.backends.backend_pdf import PdfPages
-#from pkg_resources import invalid_marker
-#import statistics
-#from numpy.linalg import matrix_power
-#from scipy.interpolate import interp1d
 from scipy import interpolate
-#import shutil
 import time
-#from collections import Counter
 from scipy.interpolate import interp1d
 from shapely.geometry import Polygon
 from shapely.geometry import LineString
 from dataclasses import dataclass
+from itertools import accumulate
 
 global MAX_LEN
 MAX_LEN = 200
 
-
-'''
-Thread_TL_X = []
-Thread_TL_Y = []
-Thread_TR_X = []
-Thread_TR_Y = []
-Thread_BL_X = []
-Thread_BL_Y = []
-Thread_BR_X = []
-Thread_BR_Y = []    
-'''
-
-from itertools import accumulate
+global Gripperthreshold
+Gripperthreshold = -0.8
 
 mathematicaColors = {
     "blue":"#5E81B5",
@@ -67,6 +43,7 @@ colors =["#5E81B5","#D47BC9","#7CEB8E","#E36D6D","#C9602A","#77B9E0","#A278F0","
 opacity = (180,)
 # radius of keypoint
 radius = 3
+
 def main():     
     dir=os.getcwd()
     '''
@@ -80,11 +57,8 @@ def main():
         available_labels = next(os.walk(os.path.join(dir, "labels")))[1]
         print("Available task labels: ", available_labels)
         sys.exit()
-    '''
-    
-    start = time.time()  
-
-    task = "Needle_Passing"
+    ''' 
+    task = "Knot_Tying"
     #I = Iterator(task) 
     I = Iterator(task)
     I.DrawLabelsContextKin()
@@ -177,18 +151,20 @@ class ContextInterface:
         with open(self.c_loc) as file:
             for line in file:
                 self.transcript.append(line.rstrip())
+        self.empty = len(self.transcript) == 0
+
     def getContext(self,index):
+        if(self.empty):
+             return "Building Prediction"
         for i in range(1,len(self.transcript)):
             l_s = self.transcript[i].split(" ")
             if(int(l_s[0]) > index):
                 #return " ".join(min(0,i-1))
                 return self.transcript[max(0,i-1)]
 
-class Frame:
-    def __init__(self, task):
-        self.task = task
-
+        
 class Iterator:
+
     def __init__(self, task):
         self.CWD = os.path.dirname(os.path.realpath(__file__))        
         self.task = task
@@ -208,6 +184,16 @@ class Iterator:
         self.context_output = os.path.join(self.CWD,task,"vis_context_labels")
         self.OS = "windows"
 
+    """
+    Iterator: getGripperAngle() 
+
+    Pre: self.kinDir set to kinematics folder inside the <self.task> parent folder
+
+    :return: touple of three columns from the kinematics data
+    all_kin_data    =   [PSML_Gripper_Angle,PSMR_Gripper_Angle]
+    all_kin_data_L  =   PSML_Gripper_Angle
+    all_kin_data_R  =   PSMR_Gripper_Angle
+    """ 
     def getGripperAngle(self):
         count = 0
         all_kin_data = {}
@@ -216,9 +202,7 @@ class Iterator:
         for root, dirs, files in os.walk(self.kinDir):
             for file in files:
                 if("99"  in file):
-                    continue
-                #print(file)
-                
+                    continue                
                 #Suturing index 10 is PSML_gripper_angle
                 #Suturing index 21 is PSMR_gripper_angle
                 kin_file =  os.path.join(self.kinDir, file)                
@@ -240,7 +224,7 @@ class Iterator:
                 all_kin_data[file] = [PSML_Gripper_Angle,PSMR_Gripper_Angle]
                 all_kin_data_L[file]=PSML_Gripper_Angle
                 all_kin_data_R[file]=PSMR_Gripper_Angle
-        print(count,"files processed!")
+        print("Obtaining Gripper Angle from Kinematic files...\t",count,self.task,"trials found!")
         return all_kin_data,all_kin_data_L,all_kin_data_R
 
     def getKinLines(self):
@@ -305,16 +289,22 @@ class Iterator:
             y0 = p[1]
             xn = p[-2]
             yn = p[-1]
-            endPoints.append( [ [x0,xn],[y0,yn] ] ) # An,Bn
-
-        
+            endPoints.append( [ [x0,xn],[y0,yn] ] ) # An,Bn       
         return newPolyLines
 
+    ''' Iterator: DrawSingleImageKT(imageSource, labelSource, target, DEBUG=False)
+
+    :param imageSource: FILEPATH - Image path
+    :param labelSource: FILEPATH - used to get image segmentation annotation JSON files
+    :param target:      FILEPATH - 
+    :param DEBUG:       boolean - enable console printout
+
+    :return: nothing'''     
     def DrawSingleImageKT(self, imageSource, labelSource, target, DEBUG=False):
-        F = Frame()
+        
         J = JSONInterface(labelSource)
-        polyNames , polygons = J.getPolygons(); # graspers only in KT, 
-        kpNames, KeyPoint = J.getKeyPoints(); # None in KT,
+        polyNames , polygons = J.getPolygons(); #! graspers only in KT, 
+        kpNames, KeyPoint = J.getKeyPoints(); #! None in KT,
         polyLineNames, polyLines = J.getPolyLines();
 
         if self.OS == "windows":
@@ -322,10 +312,10 @@ class Iterator:
         else: 
             font = ImageFont.truetype("/usr/share/fonts/truetype/freefont/FreeMono.ttf", 14, encoding="unic")
 
-        #print(polyLines)
-        #return    
+        #! print(polyLines)
+        #! return    
         img = Image.open(imageSource)
-        #draw = ImageDraw.Draw(img)
+        #! draw = ImageDraw.Draw(img)
         draw = ImageDraw.Draw(img, "RGBA")   
         polyNames_TL = []
         polyLines_TL = []
@@ -361,9 +351,26 @@ class Iterator:
             kp = [polyLines_BR[0][0], polyLines_BR[0][1]]             
             self.DrawThread(polyLines_BR, polyNames_BR, kp, draw, font)
 
-        img.save(target) # to save
-        return Frame
- 
+        img.save(target)
+        return 
+    
+    ''' Iterator: CalcDistancesSingleThread(self,LGX,LGY,RGX,RGY,ThreadX,ThreadY)
+
+    :param imageSource: FILEPATH - Image path
+    :param labelSource: FILEPATH - used to get image segmentation annotation JSON files
+    :param target:      FILEPATH - 
+    MPI, CtxI,CtxI_Pred,
+    :param DEBUG:       boolean - enable console printout
+
+    :do: Draw a single image containing
+        - ground truth context labels
+        - predicted context labels, 
+        - annotation objects (gripper mask, thread mask)
+
+        using the video frame as background
+    LG_Info, RG_Info, LG_Thread_Info, RG_Thread_Info = self.DrawSingleImageContextKT(imageSource,labelSource,outputDest, MPI, CtxI,CtxI_Pred)
+    #! used in DrawSingleImageContextKT  
+    :return: '''        
     def CalcDistancesSingleThread(self,LGX,LGY,RGX,RGY,ThreadX,ThreadY):
         LG_Points = []
         RG_Points = []
@@ -528,9 +535,148 @@ class Iterator:
             else:
                 print("Unknown Polygon Class",polyNames[i])
         return LGX,LGY,RGX,RGY,NX,NY,RingsX,RingsY
+    
+    ''' Iterator: DrawSingleImageContextKT(imageSource,imageSource, labelSource, target, MPI, CtxI,CtxI_Pred, DEBUG=False)
 
-    def DrawSingleImageContext(self, imageSource, labelSource, target, MPI, CtxI,CtxI_Pred, DEBUG=False):
-       
+    :param imageSource: FILEPATH - Image path
+    :param labelSource: FILEPATH - used to get image segmentation annotation JSON files
+    :param target:      FILEPATH - 
+    MPI, CtxI,CtxI_Pred,
+    :param DEBUG:       boolean - enable console printout
+
+    :do: Draw a single image containing
+        - ground truth context labels
+        - predicted context labels, 
+        - annotation objects (gripper mask, thread mask)
+
+        using the video frame as background
+    LG_Info, RG_Info, LG_Thread_Info, RG_Thread_Info = self.DrawSingleImageContextKT(imageSource,labelSource,outputDest, MPI, CtxI,CtxI_Pred)
+
+    :return: '''     
+    #!LG_Info, RG_Info, LG_Thread_Info, RG_Thread_Info = self.DrawSingleImageContextKT(imageSource,labelSource,outputDest, MPI, CtxI,CtxI_Pred)
+    def DrawSingleImageContextKT(self, imageSource, labelSource, target, MPI, CtxI,CtxI_Pred, DEBUG=False):       
+        J = JSONInterface(labelSource)
+        polyNames , polygons = J.getPolygons(); #! graspers only in KT, 
+        kpNames, KeyPoint = J.getKeyPoints(); #! None in KT,
+        polyLineNames, polyLines = J.getPolyLines();
+
+        #! we want two sets of Thread annotations: top and bottom
+
+        SingleThreadXTop = []
+        SingleThreadYTop = []
+
+        SingleThreadXBottom = []
+        SingleThreadYBottom = []
+
+        if self.OS == "windows":
+            font = ImageFont.truetype("arial.ttf", 12)
+        else: 
+            font = ImageFont.truetype("/usr/share/fonts/truetype/freefont/FreeMono.ttf", 14, encoding="unic")
+
+        img = Image.open(imageSource)
+        IDX = int(imageSource.split("_")[-1].split(".")[0])
+        draw = ImageDraw.Draw(img, "RGBA")   
+        polyNames_T = []
+        polyLines_T = []
+        polyNames_B = []
+        polyLines_B = []
+        for i in range(len(polyLines)):
+            if("Top" in polyLineNames[i]):
+                polyNames_T.append(polyLineNames[i])
+                polyLines_T.append(polyLines[i])            
+            elif("Bottom" in polyLineNames[i]):
+                polyNames_B.append(polyLineNames[i])
+                polyLines_B.append(polyLines[i])
+        
+
+        self.DrawPolygons(polygons,polyNames,draw,font)
+        self.DrawKeyPoints(KeyPoint, kpNames, polygons,draw,font)
+
+        
+        if(len(polyLines_T) !=0 and len(polyLines_B) !=0):     
+            #! what is the most useful object we can get out of self.DrawThread that would help us determine intersections with the thread? 
+            SingleThreadXTop, SingleThreadYTop = self.DrawThreadKT(polyLines_T, polyNames_T, [0,0], draw, font)
+            SingleThreadXBottom, SingleThreadYBottom = self.DrawThreadKT(polyLines_B, polyNames_B, [0,0], draw, font)
+        '''
+        else: 
+            needleEnd = KeyPoint[0]
+            for i in range(len(KeyPoint)):
+                if("Needle End" in kpNames[i]):
+                    needleEnd = KeyPoint[i]
+            if(len(polyLines) !=0):     
+                SingleThreadX, SingleThreadY = self.DrawThread(polyLines, polyLineNames, needleEnd, draw, font)
+        '''
+        
+        LGX,LGY,RGX,RGY,NX,NY,RingsX,RingsY = self.OrganizePoints(polygons,polyNames)
+        LG_Message = ""
+        RG_Message = ""
+        LG_Thread_Message = ""
+        RG_Thread_Message = ""
+
+        N_Message = ""
+        Lens_Message = ""
+        #! if N internsection is 3, there is no intersection
+        LG_Thread_Info_Top, RG_Thread_Info_Top = self.CalcDistancesSingleThread(LGX, LGY, RGX, RGY, SingleThreadXTop, SingleThreadYTop)
+        LG_Thread_Info_Bottom, RG_Thread_Info_Bottom = self.CalcDistancesSingleThread(LGX, LGY, RGX, RGY, SingleThreadXBottom, SingleThreadYBottom)
+        
+        try:
+            if(len(LG_Thread_Info_Top) == 0 or len(LG_Thread_Info_Bottom) == 0):
+                LG_Message = "No Annotation for Left Grasper"
+            else:
+                LG_Message = "L To Top Thread:" + '{0:.2f}'.format(LG_Thread_Info_Top[0])  + " Inters:" + str(LG_Thread_Info_Top[1])
+                LG_Message += "\nL To Bottom Thread:" + '{0:.2f}'.format(LG_Thread_Info_Bottom[0])  + " Inters:" + str(LG_Thread_Info_Bottom[1])
+
+            if(len(RG_Thread_Info_Top) == 0 or len(RG_Thread_Info_Bottom) == 0):
+                RG_Message = "No Annotation for Right Grasper"
+            else:
+                RG_Message = "\nR To Top Thread:" + '{0:.2f}'.format(RG_Thread_Info_Top[0])  + " Inters:" + str(RG_Thread_Info_Top[1])
+                RG_Message += "\nR To Bottom Thread:" + '{0:.2f}'.format(RG_Thread_Info_Bottom[0])  + " Inters:" + str(RG_Thread_Info_Bottom[1])
+            '''
+            if(len(LGX) == 0 or len(LGY) == 0 or len(SingleThreadX) == 0):
+                LG_Thread_Message = "No Annotation for L_G_Thread"
+            else:
+                LG_Thread_Message = "L To Thread:" + '{0:.2f}'.format(LG_Thread_Info[0])  + " Inters:" + str(LG_Thread_Info[1])
+
+            if(len(RGX) == 0 or len(RGY) == 0 or len(SingleThreadX) == 0):
+                RG_Thread_Message = "No Annotation for R_G_Thread"
+            else:
+                RG_Thread_Message = "R To Thread:" + '{0:.2f}'.format(RG_Thread_Info[0])  + " Inters:" + str(RG_Thread_Info[1])
+            '''
+
+        except Exception as e: 
+            print(e)
+
+        #! use Lens_Message inside first argument of DrawTextArr - Used to check that all the distance lists are the same length
+        Lens_Message = "L:" + str(len(LGX) - len(LGY)) + " R:" + str( len(RGX) - len(RGY)) + " N:" + str(len(NX)-len(NY)) 
+        try:
+            #store = [CtxI_Pred.getContext(IDX)+"-predicted",CtxI.getContext(IDX),LG_Message, RG_Message ]
+            self.DrawTextArr([CtxI_Pred.getContext(IDX)+"-predicted",CtxI.getContext(IDX),LG_Message, RG_Message ], draw, font)
+        except Exception as e: 
+            print(e)
+            self.DrawTextArr(["Shape Exception" ], draw, font)        
+        img.save(target) # to save        
+        #! F.L_G_Dist = LG_Info[0] 
+        return LG_Thread_Info_Top,RG_Thread_Info_Top, LG_Thread_Info_Bottom,RG_Thread_Info_Bottom #! add LG Bottom, RG Top
+    
+    
+    ''' Iterator: DrawSingleImageContext(imageSource,imageSource, labelSource, target, MPI, CtxI,CtxI_Pred, DEBUG=False)
+
+    :param imageSource: FILEPATH - Image path
+    :param labelSource: FILEPATH - used to get image segmentation annotation JSON files
+    :param target:      FILEPATH - 
+    MPI, CtxI,CtxI_Pred,
+    :param DEBUG:       boolean - enable console printout
+
+    :do: Draw a single image containing
+        - ground truth context labels
+        - predicted context labels, 
+        - annotation objects (gripper mask, thread mask)
+
+        using the video frame as background
+    LG_Info, RG_Info, N_Intersection, Needle_Ring_Distances,LG_Thread_Info, RG_Thread_Info = self.DrawSingleImageContext(imageSource,labelSource,outputDest, MPI, CtxI,CtxI_Pred)
+
+    :return:''' 
+    def DrawSingleImageContext(self, imageSource, labelSource, target, MPI, CtxI,CtxI_Pred, DEBUG=False):       
         J = JSONInterface(labelSource)
         polyNames , polygons = J.getPolygons(); # graspers only in KT, 
         kpNames, KeyPoint = J.getKeyPoints(); # None in KT,
@@ -564,11 +710,13 @@ class Iterator:
                 # what is the most useful object we can get out of self.DrawThread that would help us determine intersections with the thread? 
                 SingleThreadX, SingleThreadY = self.DrawThread(polyLines, polyLineNames, needleEnd, draw, font)
         
+        
         LGX,LGY,RGX,RGY,NX,NY,RingsX,RingsY = self.OrganizePoints(polygons,polyNames)
         LG_Message = ""
         RG_Message = ""
         LG_Thread_Message = ""
         RG_Thread_Message = ""
+        
 
         N_Message = ""
         Lens_Message = ""
@@ -592,12 +740,10 @@ class Iterator:
                 #N_Message = '{0:.2f}'.format(N_Info[0]) + " : " + '{0:.2f}'.format(N_Info[1]) 
                 N_Message = N_Info[0] + " : " + N_Info[1]
 
-
             if(len(LGX) == 0 or len(LGY) == 0 or len(SingleThreadX) == 0):
                 LG_Thread_Message = "No Annotation for L_G_Thread"
             else:
                 LG_Thread_Message = "L To Thread:" + '{0:.2f}'.format(LG_Thread_Info[0])  + " Inters:" + str(LG_Thread_Info[1])
-
 
             if(len(RGX) == 0 or len(RGY) == 0 or len(SingleThreadX) == 0):
                 RG_Thread_Message = "No Annotation for R_G_Thread"
@@ -608,21 +754,17 @@ class Iterator:
             print(e)
 
         Lens_Message = "L:" + str(len(LGX) - len(LGY)) + " R:" + str( len(RGX) - len(RGY)) + " N:" + str(len(NX)-len(NY)) 
-        # use Lens_Message inside first argument of DrawTextArr
-        
-        
+        # use Lens_Message inside first argument of DrawTextArr        
         try:
             self.DrawTextArr([CtxI_Pred.getContext(IDX)+"-predicted",CtxI.getContext(IDX),LG_Message, RG_Message,LG_Thread_Message,RG_Thread_Message,N_Message ], draw, font)
         except Exception as e: 
             self.DrawTextArr(["Shape Exception" ], draw, font)        
-        img.save(target) # to save
-        
+        img.save(target) # to save        
         #F.L_G_Dist = LG_Info[0]
         
         return LG_Info, RG_Info, N_Intersection, Needle_Ring_Distances,LG_Thread_Info, RG_Thread_Info
 
     def DrawSingleImage(self, imageSource, labelSource, target, MPI, CtxI, DEBUG=False):
-        F = Frame()
         J = JSONInterface(labelSource)
         polyNames , polygons = J.getPolygons(); # graspers only in KT, 
         kpNames, KeyPoint = J.getKeyPoints(); # None in KT,
@@ -660,7 +802,7 @@ class Iterator:
                 self.DrawThread(polyLines, polyLineNames, needleEnd, draw, font)
 
         img.save(target) # to save
-        return F
+        return
 
     def RenderThread_Arr(self, thread_X, thread_Y, draw, font):        
         kk=0   
@@ -697,13 +839,14 @@ class Iterator:
     def distNeedle(self, ax, ay,needleEnd ):
         return math.sqrt( (ax - needleEnd[0] )**2+( ay - needleEnd[1] )**2 )
 
+    #! PutTheadInOrder(polyLines arr,needleEnd as keypoint)
     def PutTheadInOrder(self,polyLines_M,kp):
         thread_X = []
         thread_Y = []  
         polyLines = polyLines_M.copy()
         while(len(polyLines) > 0):    
             index_of_closest_thread_arr = 0; 
-            position_of_closest = 0; # 0 for cannonical 0, 1 for end
+            position_of_closest = 0; #!  0 for "cannonical" - same position , 1 for end
             thread_idx_0_distances = []
             thread_idx_1_distances = [] 
 
@@ -716,7 +859,7 @@ class Iterator:
                 thread_idx_0_distances.append(self.distNeedle(fx,fy,kp))
                 thread_idx_1_distances.append(self.distNeedle(lx,ly,kp))       
 
-            min_0 = min(thread_idx_0_distances) # min of all distances between last end
+            min_0 = min(thread_idx_0_distances) #! min of all distances between last end
             min_1 = min(thread_idx_1_distances)
 
             idx_0 = thread_idx_0_distances.index(min_0)
@@ -748,6 +891,59 @@ class Iterator:
 
 
         return thread_X, thread_Y
+
+
+    def DrawThreadKT(self,polyLines, polyLineNames, needleEnd, draw, font):  
+        thread_X = []
+        thread_Y = []
+        if(len(polyLines)<2):
+            for i in range(len(polyLines)):
+                l = len(polyLines)
+                for j in range(0,len(polyLines[i]),2):
+                    thread_X.append(polyLines[i][j])
+                    thread_Y.append(polyLines[i][j+1])
+        else:
+            thread_X, thread_Y = self.PutTheadInOrder(polyLines,needleEnd)
+      
+
+        '''
+        for i in range(len(polyLines)):
+            l = len(polyLines)
+            c = self.getRBGA(colors[-i])
+            k=0
+            for j in range(0,len(polyLines[l-i-1]),2):
+                thread_X.append(polyLines[l-i-1][j])
+                thread_Y.append(polyLines[l-i-1][j+1])
+        '''  
+        for i in range(len(polyLines)):
+            c = self.getRBGA(colors[-i])
+            k=0          
+
+            for j in range(0,len(polyLines[i])):
+                #if(k+3>=len(polyLines[i])):
+                #    
+                draw.line(( polyLines[i][k],
+                            polyLines[i][k+1],
+                            polyLines[i][k+2],
+                            polyLines[i][k+3]), fill=c, width=9) 
+                x = polyLines[i][k]
+                y = polyLines[i][k+1]          
+                leftUpPoint = (x-2, y-2)
+                rightDownPoint = (x+2, y+2)
+                twoPointList = [leftUpPoint, rightDownPoint]
+                draw.rectangle(twoPointList,fill=(0, 255, 0, 255))
+                x = polyLines[i][k+2]
+                y = polyLines[i][k+3]     
+                leftUpPoint = (x-2, y-2)
+                rightDownPoint = (x+2, y+2)
+                twoPointList = [leftUpPoint, rightDownPoint]
+                draw.rectangle(twoPointList,fill=(0, 255, 0, 255))
+                k+=2
+                if(k>=len(polyLines[i])-2): break
+            draw.text((polyLines[i][0],polyLines[i][1]),polyLineNames[i]+str(i),(255,255,255),font=font)   
+
+        ThreadX, ThreadY = self.RenderThread_Arr(thread_X, thread_Y, draw, font)
+        return ThreadX, ThreadY  
 
     def DrawThread(self,polyLines, polyLineNames, needleEnd, draw, font):  
         thread_X = []
@@ -850,11 +1046,10 @@ class Iterator:
                 # draw.text((x, y),"Sample Text",(r,g,b))
             draw.text((x_c-radius*2, y_c-radius),polyNames[i]+str(i),(255,255,255),font=font)
 
-    '''Loops through self.imagesDir
-    '''
-    
+    '''Loops through self.imagesDir '''    
     def isGripperClosed(self, frameNumber, L_Gripper_Angle,R_Gripper_Angle):
-        threshold = -0.8
+        global Gripperthreshold
+        Gripperthreshold = -0.8
         '''
         max_angle_L = max(L_Gripper_Angle)
         min_angle_L = min(L_Gripper_Angle)
@@ -865,145 +1060,175 @@ class Iterator:
         R_Gripping = False
 
         if(frameNumber<len(L_Gripper_Angle) and frameNumber < len(R_Gripper_Angle)):
-            L_Gripping = float(L_Gripper_Angle[frameNumber]) < threshold
-            R_Gripping = float(R_Gripper_Angle[frameNumber]) < threshold
+            L_Gripping = float(L_Gripper_Angle[frameNumber]) < Gripperthreshold
+            R_Gripping = float(R_Gripper_Angle[frameNumber]) < Gripperthreshold
 
         return L_Gripping,R_Gripping
 
+    """ Iterator: DrawLabelsContextKin() 
+    Pre:self.kinDir set to path to kinematics folder
+    :return: describe what it returns """ 
     def DrawLabelsContextKin(self):
-        count = 0      
-        all_kin_data,all_kin_data_L,all_kin_data_R = self.getGripperAngle();
+        count = 0
+        all_kin_data,all_kin_data_L,all_kin_data_R = self.getGripperAngle(); #! gets gripper angle kinematics columns as lists - from .../kinematics/ folder
+
+        #! for each trial for which there are kinematics files with gripper angle - see Iterator.getGripperAngle()
         for trial in all_kin_data:
-            trial_s = trial.replace(".csv","")
-            trialKin = all_kin_data[trial] # Gripper Angles L and R
+            # used as sample ID: Knot_Tying_S02_T02
+            task_subject_trial = trial.replace(".csv","")
+
+            #! Gripper Angles L+R, L, and R
+            trialKin = all_kin_data[trial] 
             trialKin_L = all_kin_data_L[trial]
             trialKin_R = all_kin_data_R[trial]
-            trialImageDir = os.path.join(self.imagesDir,trial_s) 
-            ctxOutput = os.path.join(self.context_output,trial_s+".txt")
-           
-            # walk on a trial folder of frames
+
+            trialImageDir = os.path.join(self.imagesDir,task_subject_trial)
+            ctxOutput = os.path.join(self.context_output,task_subject_trial+".txt")
+
+            #! where we save the 
             context = []
-            for root, dirs, files in os.walk(trialImageDir):            
+            #! walk on a trial folder of frames
+            for root, dirs, files in os.walk(trialImageDir):
                 for file in files:
                     if "frame" not in file:
-                        continue
-                    #if "frame_1599" in file or "frame_1264" in file or "frame_0805" in file or "frame_1572" in file:
-                    #    continue
-                    #if "Suturing_S02_T05" not in os.path.basename(root):
-                    #    continue
-                    print("Proc:", trial_s,file+".txt" )
+                        continue 
 
-                    frameNumber = file.replace("frame_","")
-                    frameNumber = frameNumber.replace(".txt","")
-                    frameNumber = frameNumber.replace(".png","")
-                    frameNumber = int(frameNumber)
+                    print("Proc:", task_subject_trial, file+".txt" )
+                    frameNumber = int(file.replace("frame_","").replace(".txt","").replace(".png",""))
+                    MP_comb = os.path.join(self.mpDir,task_subject_trial+".txt")
 
-                    MP_comb = os.path.join(self.mpDir,trial_s+".txt")
-                    #print(MP_comb)
-                    MPI = MPInterface(MP_comb) # turn on for MPs as well
+                    #! turn on for MPs
+                    MPI = MPInterface(MP_comb)
 
-                    Context_comb = os.path.join(self.ContextDir,trial_s+".txt")
-                    Pred_Context_comb = os.path.join(self.context_output,trial_s+".txt")
-                    #Pred_Context_comb = os.path.join(self.ContextDir,trial_s+".txt")
-                    #print(MP_comb)
+                    Context_comb = os.path.join(self.ContextDir,task_subject_trial+".txt")
+                    Pred_Context_comb = os.path.join(self.context_output,task_subject_trial+".txt")
                     CtxI = ContextInterface(Context_comb)
                     CtxI_Pred = ContextInterface(Pred_Context_comb)
 
                     '''
-                    If we replace "images" by "labels" then the image source should be the same as the label source, 
+                    If we replace "images" by "labels" then the image source should be the same as the label source,
                     which is the same as the output destination
                     '''
-
-                    '''
-                    imageRoot = root
                     labelRoot = root.replace("images_pre","annotations_pre")
                     outputRoot = root.replace("images_pre","labeled_images")
-                    '''
-                    labelRoot = root.replace("images_pre","annotations_pre")
-                    outputRoot = root.replace("images_pre","labeled_images")
-                    
-                    
                     imageSource = os.path.join(trialImageDir, file)
                     labelSource = os.path.join(labelRoot, self.imageToJSON(file))
                     outputDest = os.path.join(outputRoot, file)
-
                     if(not os.path.isdir(outputRoot)):
                         path = pathlib.Path(outputRoot)
                         path.mkdir(parents=True, exist_ok=True)
-
-                    #if os.path.exists(outputDest):
-                    #    os.remove(outputDest)         
-
+                    #! if os.path.exists(outputDest): os.remove(outputDest)
                     if not os.path.exists(labelSource):
-                        #print("label not found for ",imageSource)
+                        #! print("label not found for ",imageSource)
                         continue
                     else:
-                        #self.DrawLabel(imageSource,labelSource,outputDest)
+                        #! we are drawing the image so late in the execution because we need to predict the context annotation first
                         if("Knot" in self.task):
-                            self.DrawSingleImageKT(imageSource,labelSource,outputDest)
+                            #self.DrawSingleImageKT(imageSource,labelSource,outputDest)
+                            #! LG_Thread_Info, RG_Thread_Info contains intersections between graspers and the nearest thread top or bottom (combined left and right)
+                            LG_Thread_Info_Top,RG_Thread_Info_Top, LG_Thread_Info_Bottom,RG_Thread_Info_Bottom = self.DrawSingleImageContextKT(imageSource,labelSource,outputDest, MPI, CtxI,CtxI_Pred)
+
                         else:
+                            #! LG_Info, RG_Info, N_Intersection, Needle_Ring_Distances,LG_Thread_Info, RG_Thread_Info
                             LG_Info, RG_Info, N_Intersection, Needle_Ring_Distances,LG_Thread_Info, RG_Thread_Info = self.DrawSingleImageContext(imageSource,labelSource,outputDest, MPI, CtxI,CtxI_Pred)
-                    
-                    #LG_Info[1] for intersection with needle
-                    #frameNumber, L_Gripper_Angle, R_Gripper_Angle
 
-                    L_Gripping,R_Gripping = self.isGripperClosed(frameNumber,trialKin_L,trialKin_R)
-
-                    
-                    L_G_Touch = 0
-                    L_G_Hold = 0
-                    R_G_Touch = 0
-                    R_G_Hold = 0
-
-                    if(LG_Info[1] and L_Gripping):
-                        L_G_Touch = 0
-                        L_G_Hold = 2
-                    elif(LG_Info[1] and not L_Gripping):
-                        L_G_Touch = 2
-                        L_G_Hold = 0  
-
-                    if(RG_Info[1] and R_Gripping):
-                        R_G_Touch = 0
-                        R_G_Hold = 2
-                    elif(RG_Info[1] and not R_Gripping):
-                        R_G_Touch = 2
-                        R_G_Hold = 0 
-
-                    Extra_State = 0
-
-                    if("Needle" in self.task):
-                        if(N_Intersection != 3):
-                            Extra_State = 2
-                        else:
-                            Extra_State = 0
-
-                    
-                    context.append(str(frameNumber) + " " + str(L_G_Hold) + " " + str( L_G_Touch) + " " + str(R_G_Hold) + " " + str(R_G_Touch) + " " + str(Extra_State))
-                  
+                    #! LG_Info[1] for intersection with needle
+                    #! frameNumber, L_Gripper_Angle, R_Gripper_Angle
 
                     # we can then use the object Frame to determine the context
                     # Contact/Hold Context:
                     # "Nothing", "Ball/Block/Sleeve", "Needle", "Thread", "Fabric/Tissue", "Ring", "Other"
                     #           0                   1         2         3               4       5       6
+                   
+                    if("Needle" in self.task or "Suturing" in self.task):
+                        # Needle State in Suturing:
+                        # "Not Touching", "Touching", "In"
+                        #               0       1       2
+                        # Frame# {0,2,3}, {0,2,3}, {0,2,3}, {0,2,3}, {0}
 
+                        # Needle States in Needle Passing
+                        # "Out of", "Touching","In"
+                        #       0           1     2
+                        # Frame# {0,2,3,5},{0,2,3,5},{0,2,3,5},{0,2,3,5},{0,1,2}
+                        L_Gripping,R_Gripping = self.isGripperClosed(frameNumber,trialKin_L,trialKin_R)                    
+                        L_G_Touch = 0
+                        L_G_Hold = 0
+                        R_G_Touch = 0
+                        R_G_Hold = 0
+                        if(LG_Info[1] and L_Gripping):
+                            L_G_Touch = 0
+                            L_G_Hold = 2
+                        elif(LG_Info[1] and not L_Gripping):
+                            L_G_Touch = 2
+                            L_G_Hold = 0 
+                        if(RG_Info[1] and R_Gripping):
+                            R_G_Touch = 0
+                            R_G_Hold = 2
+                        elif(RG_Info[1] and not R_Gripping):
+                            R_G_Touch = 2
+                            R_G_Hold = 0 
+                        Extra_State = 0
+                        if("Needle" in self.task):
+                            if(N_Intersection != 3):
+                                Extra_State = 2
+                            else:
+                                Extra_State = 0                    
+                        context.append(str(frameNumber) + " " + str(L_G_Hold) + " " + str( L_G_Touch) + " " + str(R_G_Hold) + " " + str(R_G_Touch) + " " + str(Extra_State))
 
-                    # Needle State in Suturing:
-                    # "Not Touching", "Touching", "In"
-                    #               0       1       2
-                    # Frame# {0,2,3}, {0,2,3}, {0,2,3}, {0,2,3}, {0}
-
-                    # Needle States in Needle Passing
-                    # "Out of", "Touching","In"
-                    #       0           1     2
-                    # Frame# {0,2,3,5},{0,2,3,5},{0,2,3,5},{0,2,3,5},{0,1,2}
-
-                    # Knot States in Knot Tying:
-                    
+                    else: #! Knot Tying                        
+                        # Knot States in Knot Tying:
+                        #"N/A", "Thread Wrapped", "Loose", "Tight"
+                        #    0,                1,       2,       3
+                        L_Gripping,R_Gripping = self.isGripperClosed(frameNumber,trialKin_L,trialKin_R)                    
+                        L_G_Touch = 0
+                        L_G_Hold = 0
+                        R_G_Touch = 0
+                        R_G_Hold = 0
+                        if( (LG_Thread_Info_Top[1] or LG_Thread_Info_Bottom[1]) and L_Gripping ):
+                            L_G_Touch = 0
+                            L_G_Hold = 3
+                        elif((LG_Thread_Info_Top[1] or LG_Thread_Info_Bottom[1]) and not L_Gripping ):
+                            L_G_Touch = 3
+                            L_G_Hold = 0 
+                        if( (RG_Thread_Info_Top[1] or RG_Thread_Info_Bottom[1]) and R_Gripping ):
+                            R_G_Touch = 0
+                            R_G_Hold = 3
+                        elif((RG_Thread_Info_Top[1] or RG_Thread_Info_Bottom[1]) and not R_Gripping):
+                            R_G_Touch = 3
+                            R_G_Hold = 0 
+                        Extra_State = 0                                       
+                        context.append(str(frameNumber) + " " + str(L_G_Hold) + " " + str( L_G_Touch) + " " + str(R_G_Hold) + " " + str(R_G_Touch) + " " + str(Extra_State))
                     count += 1
 
-                    
             #self.save(ctxOutput,context)
             print(count,"images processed!")
+
+    def GenerateContextLine(self,L_G_Touch,L_G_Hold,R_G_Touch,R_G_Hold,L_Gripping,R_Gripping,N_Intersection,frameNumber):
+        '''
+        L_G_Touch = 0
+        L_G_Hold = 0
+        R_G_Touch = 0
+        R_G_Hold = 0
+        if(LG_Info[1] and L_Gripping):
+            L_G_Touch = 0
+            L_G_Hold = 2
+        elif(LG_Info[1] and not L_Gripping):
+            L_G_Touch = 2
+            L_G_Hold = 0 
+        if(RG_Info[1] and R_Gripping):
+            R_G_Touch = 0
+            R_G_Hold = 2
+        elif(RG_Info[1] and not R_Gripping):
+            R_G_Touch = 2
+            R_G_Hold = 0 
+        Extra_State = 0
+        if("Needle" in self.task):
+            if(N_Intersection != 3):
+                Extra_State = 2
+            else:
+                Extra_State = 0                    
+        return str(frameNumber) + " " + str(L_G_Hold) + " " + str( L_G_Touch) + " " + str(R_G_Hold) + " " + str(R_G_Touch) + " " + str(Extra_State)
+        '''
 
     def DrawLabelsContext(self):
             count = 0
@@ -1082,6 +1307,7 @@ class Iterator:
                     
             print(count,"images processed!")
 
+    #! Needs: self.imagesDir, 
     def DrawLabels(self):
         count = 0
         for root, dirs, files in os.walk(self.imagesDir):
@@ -1104,7 +1330,7 @@ class Iterator:
                 '''
                 imageRoot = root
                 #labelRoot = self.getDirectory(root,"labels")
-                labelRoot = root.replace("images_pre","annotations_pre")
+                labelRoot = root.replace("images_pre","annotations")
                 #outputRoot =  self.getDirectory(root,"output")
                 outputRoot = root.replace("images_pre","labeled_images")
 
@@ -1132,8 +1358,7 @@ class Iterator:
                 count += 1
                 
         print(count,"images processed!")
-       
-     
+
     def save(self, file, lines):
         with open(file, 'w+') as f:
             for item in lines:

@@ -1,0 +1,148 @@
+{
+  "metadata": {
+    "lastAction": {
+      "email": "labeler211@cogitotech.in",
+      "timestamp": 1639646463875
+    },
+    "width": 640,
+    "height": 480,
+    "name": "frame_0000.png",
+    "projectId": 52106,
+    "isPredicted": false,
+    "status": "Completed",
+    "pinned": false,
+    "annotatorEmail": null,
+    "qaEmail": null
+  },
+  "comments": [],
+  "tags": [],
+  "instances": [
+    {
+      "type": "polygon",
+      "classId": 325701,
+      "probability": 100,
+      "points": [
+        4.35, 308.21, 59.03, 296.37, 62.9, 294.2, 65.46, 290.22, 63.76, 285.11,
+        62.05, 282.84, 60.06, 280.85, 54.99, 280.4, 4.17, 286.17
+      ],
+      "groupId": 0,
+      "pointLabels": {},
+      "locked": true,
+      "visible": true,
+      "attributes": [],
+      "trackingId": "6760c86fd468f72dfb17d99cd57c77b6e197f76",
+      "error": null,
+      "createdAt": "2021-07-13T05:16:10.910Z",
+      "createdBy": { "email": "labeler211@cogitotech.in", "role": "Admin" },
+      "creationType": "Manual",
+      "updatedAt": "2021-07-13T05:28:58.712Z",
+      "updatedBy": { "email": "labeler211@cogitotech.in", "role": "Admin" },
+      "className": "Left Grasper"
+    },
+    {
+      "type": "polygon",
+      "classId": 987622,
+      "probability": 100,
+      "points": [
+        190.88, 276.31, 189.85, 276.35, 188.56, 275.64, 187.08, 274.13, 184.64,
+        270.25, 178.75, 255.25, 176.66, 245.38, 175.01, 240.09, 173.14, 239.95,
+        168.98, 242.25, 166.97, 242.96, 165.39, 242.96, 163.95, 242.82, 162.52,
+        241.67, 161.23, 239.38, 163.24, 233.06, 166.39, 230.04, 169.27, 228.18,
+        175.73, 228.18, 176.87, 229.47, 181.9, 250.72, 186.49, 262.92, 191.23,
+        272.25, 191.52, 274.84, 191.52, 275.78
+      ],
+      "groupId": 0,
+      "pointLabels": {},
+      "locked": true,
+      "visible": true,
+      "attributes": [],
+      "trackingId": "de67517bf77886a6fbe35214026c427c06bdcada",
+      "error": null,
+      "createdAt": "2021-11-25T10:44:07.401Z",
+      "createdBy": { "email": "labeler210@cogitotech.in", "role": "Admin" },
+      "creationType": "Manual",
+      "updatedAt": "2021-11-25T10:50:21.488Z",
+      "updatedBy": { "email": "labeler210@cogitotech.in", "role": "Admin" },
+      "className": "Ring_4"
+    },
+    {
+      "type": "polygon",
+      "classId": 993750,
+      "probability": 100,
+      "points": [
+        319.45, 256.64, 319.13, 254.51, 319.49, 251.03, 320.82, 242.69, 324.56,
+        229.4, 327.02, 223.98, 331.3, 218.71, 335.07, 215.88, 338.61, 215.76,
+        339.55, 216.12, 340.14, 217.65, 340.25, 219.88, 339.67, 221.89, 332.6,
+        228.83, 328.2, 232.49, 326.49, 236.99, 324.77, 244.28, 323.27, 255.74,
+        321.13, 257.24
+      ],
+      "groupId": 0,
+      "pointLabels": {},
+      "locked": true,
+      "visible": true,
+      "attributes": [],
+      "trackingId": "b8732a9cf1cdec8e5262a39d93f43b1a51afc1db",
+      "error": null,
+      "createdAt": "2021-11-25T10:44:44.807Z",
+      "createdBy": { "email": "labeler210@cogitotech.in", "role": "Admin" },
+      "creationType": "Manual",
+      "updatedAt": "2021-11-25T10:45:20.454Z",
+      "updatedBy": { "email": "labeler210@cogitotech.in", "role": "Admin" },
+      "className": "Ring_5"
+    },
+    {
+      "type": "polygon",
+      "classId": 993751,
+      "probability": 100,
+      "points": [
+        440.9, 226.56, 446.09, 222.58, 452.6, 217.97, 462.26, 208.62, 470.41,
+        199.97, 469.67, 198.66, 465.39, 196.4, 463.01, 194.15, 462.89, 190.22,
+        464.05, 187.77, 466.42, 185.9, 469.27, 184.62, 473.8, 183.83, 478.63,
+        184.72, 482.17, 186.79, 482.96, 189.74, 481.48, 196.24, 463.26, 215.34,
+        456.52, 221.26, 441.66, 232.86, 439.35, 233.2, 439.02, 231.65, 439.46,
+        229.33
+      ],
+      "groupId": 0,
+      "pointLabels": {},
+      "locked": true,
+      "visible": true,
+      "attributes": [],
+      "trackingId": "8686abffff68b79adad021a42b9ed55846873415",
+      "error": null,
+      "createdAt": "2021-11-25T10:47:02.720Z",
+      "createdBy": { "email": "labeler210@cogitotech.in", "role": "Admin" },
+      "creationType": "Manual",
+      "updatedAt": "2021-11-25T10:48:59.917Z",
+      "updatedBy": { "email": "labeler210@cogitotech.in", "role": "Admin" },
+      "className": "Ring_6"
+    },
+    {
+      "type": "polygon",
+      "classId": 993752,
+      "probability": 100,
+      "points": [
+        553.96, 249.25, 555.05, 253.93, 556.79, 257.52, 560.28, 260.9, 563.87,
+        263.3, 567.79, 264.93, 570.4, 264.93, 572.18, 264.11, 573.82, 262.32,
+        577.08, 261.89, 581.68, 261.89, 584.14, 262.89, 585.82, 264.11, 586.36,
+        265.26, 586.36, 266.95, 585, 269.83, 581.31, 274.59, 578.69, 276.27,
+        574.03, 277.35, 569.96, 277.17, 568.35, 275.92, 567.76, 272.21, 568.14,
+        270.36, 560.67, 266.85, 555.76, 263.46, 553.6, 261.15, 552.19, 258.1,
+        551.38, 254.49, 551.19, 252.47, 551.6, 250.71, 551.98, 249.85, 552.52,
+        249.2, 553.26, 249.11
+      ],
+      "groupId": 0,
+      "pointLabels": {},
+      "locked": true,
+      "visible": true,
+      "attributes": [],
+      "trackingId": "69d2c4d185115270e0153eabab4e7e7a23a6d3d9",
+      "error": null,
+      "createdAt": "2021-11-25T10:49:18.226Z",
+      "createdBy": { "email": "labeler210@cogitotech.in", "role": "Admin" },
+      "creationType": "Manual",
+      "updatedAt": "2021-11-25T10:50:08.322Z",
+      "updatedBy": { "email": "labeler210@cogitotech.in", "role": "Admin" },
+      "className": "Ring_7"
+    }
+  ]
+}

@@ -656,7 +656,7 @@ class Iterator:
         except Exception as e: 
             print(e)
             self.DrawTextArr(["Shape Exception" ], draw, font)        
-        img.save(target) # to save        
+        #img.save(target) # to save        
         #! F.L_G_Dist = LG_Info[0] 
         return LG_Thread_Info_Top,RG_Thread_Info_Top, LG_Thread_Info_Bottom,RG_Thread_Info_Bottom #! add LG Bottom, RG Top
     

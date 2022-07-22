@@ -25,6 +25,12 @@ proc_visual.py
 Thread_Sampling.py
 win-env
 */vis_context_labels_copy/
+*/ctx_ian/
+*/ctx_kay/
+*/ctx_consensus/
+*/ctx_output/
+*/vis_context_labels_null_state - Copy/
+
 
 temp.py
 todo.txt

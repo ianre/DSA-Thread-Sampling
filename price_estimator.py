@@ -53,28 +53,11 @@ class PriceEstimator():
                         p = Popen(command, stdin=PIPE, stdout=PIPE, stderr=PIPE)
                         output, err = p.communicate(b"input data that is passed to subprocess' stdin")
                         rc = p.returncode
-
                         print(trial, video_count, " : ", int(output))
                         total_fames += int(output)
                         video_count += 1
                     unique_trials[trial] = int(output)
-
-
         print("Total Unique Trial Count: ", video_count, "out of", total_videos)
         print("Total Frame Count: ", total_fames)
         print("Labeling every ",STRIDE,"frames yields", int(total_fames/STRIDE),"labeled frames")
-
 main()
-'''
-#import ffmpy
-
-#vid_place='C:/Users/ianre/Desktop/Academica/Research/aws raw videos/JIGSAWS_needlepassing/G4_sub/*'
-#mypath=r'C:/Users/ianre/Desktop/Academica/Research/aws raw videos/JIGSAWS_needlepassing/G4_sub/'
-vid_place='C:/Users/ianre/Desktop/Academica/Research/aws_videos/JIGSAWS_needlepassing/*'
-#mypath=r'C:/Users/ianre/Desktop/Academica/Research/aws_videos/JIGSAWS_needlepassing/'
-mypath=r'C:\\Users\\ianre\\Desktop\\Academica\\Research\\aws_videos\\JIGSAWS_suturing'
-#JIGSAWS_suturing
-
-quit()
-
-'''

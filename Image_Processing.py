@@ -40,9 +40,18 @@ mathematicaColors = {
 # list of colors for the annotations
 colors =["#5E81B5","#D47BC9","#7CEB8E","#E36D6D","#C9602A","#77B9E0","#A278F0","#5E81B5","#D47BC9","#FAB6F4","#C9602A","#E09C24","#EA5536","#A1C738","#5E81B5","#D47BC9","#7CEB8E","#E36D6D","#C9602A","#77B9E0","#A278F0","#D66F6D","#5E81B5","#D47BC9","#FAB6F4","#C9602A","#E09C24","#EA5536","#A1C738","#5E81B5"]
 # opacity of the annotation masks. Values range from (0 to 255) Type tuple
-opacity = (180,)
+opacity = (255,)
 # radius of keypoint
 radius = 3
+RGB = {
+    "BG":(0,0,0),
+    "GRASPER":(250,0,0),
+    "NEEDLE":(0,250,0),
+    "RING":(0,0,250)
+}
+#BG = (0,0,0)
+#GRASPER = (255,0,0)
+
 
 def main():     
     dir=os.getcwd()
@@ -58,8 +67,9 @@ def main():
         print("Available task labels: ", available_labels)
         sys.exit()
     ''' 
-    task = "Suturing"
+    task = "Needle_Passing"
     I = ImageProcessor(task)
+    I.DrawLabels()
     quit();    
    
 class ImageProcessor:
@@ -139,6 +149,7 @@ class ImageProcessor:
         img = Image.open(imageSource)
         #! draw = ImageDraw.Draw(img)
         draw = ImageDraw.Draw(img, "RGBA")   
+        '''        
         polyNames_TL = []
         polyLines_TL = []
         polyNames_TR = []
@@ -172,13 +183,18 @@ class ImageProcessor:
         if(len(polyLines_BR)>0):                
             kp = [polyLines_BR[0][0], polyLines_BR[0][1]]             
             self.DrawThread(polyLines_BR, polyNames_BR, kp, draw, font)
-
+        '''
+        self.flush_BG(img,draw)
         self.DrawPolygons(polygons,polyNames,draw,font)
 
         img.save(target)
         return 
             
-          
+    def flush_BG(self,img,draw):
+        width,height=img.size
+        draw.polygon([(0,0),(width,0),(width,height),(0,height)],RGB["BG"])
+        #print("props",width,height)
+        pass
     def DrawSingleImage(self, imageSource, labelSource, target, font, DEBUG=False):
         J = JSONInterface(labelSource)
         polyNames , polygons = J.getPolygons();
@@ -189,6 +205,7 @@ class ImageProcessor:
         img = Image.open(imageSource)
         IDX = int(imageSource.split("_")[-1].split(".")[0])
         draw = ImageDraw.Draw(img, "RGBA")   
+        self.flush_BG(img,draw)
 
         self.DrawPolygons(polygons,polyNames,draw,font)
         self.DrawKeyPoints(KeyPoint, kpNames, polygons,draw,font)
@@ -570,7 +587,7 @@ class ImageProcessor:
         ThreadX, ThreadY = self.RenderThread_Arr(thread_X, thread_Y, draw, font)
         return ThreadX, ThreadY  
 
-    def DrawThread(self,polyLines, polyLineNames, needleEnd, draw, font):  
+    def DrawThread(self,polyLines, polyLineNames, needleEnd, draw, font,text=False,interpolation=False):  
         thread_X = []
         thread_Y = []
         if(len(polyLines)<2):
@@ -617,12 +634,14 @@ class ImageProcessor:
                 draw.rectangle(twoPointList,fill=(0, 255, 0, 255))
                 k+=2
                 if(k>=len(polyLines[i])-2): break
-            draw.text((polyLines[i][0],polyLines[i][1]),polyLineNames[i]+str(i),(255,255,255),font=font)   
-
-        ThreadX, ThreadY = self.RenderThread_Arr(thread_X, thread_Y, draw, font)
-        return ThreadX, ThreadY
+            if text:
+                draw.text((polyLines[i][0],polyLines[i][1]),polyLineNames[i]+str(i),(255,255,255),font=font)   
+        if interpolation:
+            ThreadX, ThreadY = self.RenderThread_Arr(thread_X, thread_Y, draw, font)
+            return ThreadX, ThreadY
+        else: return 0,0
             
-    def DrawKeyPoints(self,KeyPoint, kpNames, polygons,draw,font):
+    def DrawKeyPoints(self,KeyPoint, kpNames, polygons,draw,font,text=False):
         for i in range(len(KeyPoint)): # draws each KeyPoint
             x = KeyPoint[i][0]
             y = KeyPoint[i][1]            
@@ -631,7 +650,8 @@ class ImageProcessor:
             twoPointList = [leftUpPoint, rightDownPoint]
             c = self.getRBGA(colors[i+(len(polygons))])
             draw.ellipse(twoPointList, fill=c)
-            draw.text((x-radius*2, y-radius),kpNames[i]+str(i),(255,255,255),font=font)
+            if text:
+                draw.text((x-radius*2, y-radius),kpNames[i]+str(i),(255,255,255),font=font)
 
     def DrawTextTopCorner(self,MPI_str,draw,font):
         if(MPI_str is None): 
@@ -655,21 +675,23 @@ class ImageProcessor:
             draw.text( (x,y),s,(255,255,255),font=font);
             offset+=1
 
-    def DrawPolygons(self, polygons,polyNames,draw,font):
+    def DrawPolygons(self, polygons,polyNames,draw,font,text=False,center=False):
         for i in range(len(polygons)):
             #if("Ring" in polyNames[i]):
             c = self.getRBGA(colors[i])
                 #print("Poly1:",polygons[i])
             draw.polygon(polygons[i], fill=c) #,outline='#EA5536')     
                 ########## CENTER POINT
-            x_c, y_c = self.Centroid(polygons[i])          
-            leftUpPoint = (x_c-radius, y_c-radius)
-            rightDownPoint = (x_c+radius, y_c+radius)
-            twoPointList = [leftUpPoint, rightDownPoint]
-            c = self.getRBGA(colors[i+(len(polygons))])
-            draw.ellipse(twoPointList,outline=1, fill=c)            
+            if center:
+                x_c, y_c = self.Centroid(polygons[i])          
+                leftUpPoint = (x_c-radius, y_c-radius)
+                rightDownPoint = (x_c+radius, y_c+radius)
+                twoPointList = [leftUpPoint, rightDownPoint]
+                c = self.getRBGA(colors[i+(len(polygons))])
+                draw.ellipse(twoPointList,outline=1, fill=c)            
                 # draw.text((x, y),"Sample Text",(r,g,b))
-            draw.text((x_c-radius*2, y_c-radius),polyNames[i]+str(i),(255,255,255),font=font)
+            if text: 
+                draw.text((x_c-radius*2, y_c-radius),polyNames[i]+str(i),(255,255,255),font=font)
 
     def DrawLabelsContext(self):
             count = 0

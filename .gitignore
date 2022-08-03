@@ -30,7 +30,8 @@ win-env
 */ctx_consensus/
 */ctx_output/
 */vis_context_labels_null_state - Copy/
-
-
+Needle_Passing/images/
+Needle_Passing/mask_output/
+Peg_Transfer/
 temp.py
 todo.txt

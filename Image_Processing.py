@@ -48,20 +48,27 @@ opacity = (255,)
 radius = 3
 RGB = {
     "BG":(0,0,0), 
+
+    # Polygons: the keys match exactly with elements in the list polyNmes
     "Left Grasper":(250,0,0),
     "Right Grasper":(0,250,0),
+    "Ring_4":(0,0,250),
+    "Ring_5":(0,0,250),
+    "Ring_6":(0,0,250),
+    "Ring_7":(0,0,250),
     "Needle Mask":(0,0,250),
+
+    # Keypoints: the keys match with elements in list kpNames
     "Needle End":(0,0,250),
     "Needle Tip":(0,0,250),
+
+    # PolyLines: the keys match with elements in list polyLineNames
     "Thread Polyline":(0,0,250),
     "Bottom Left Thread":(0,0,250),
     "Bottom Right Thread":(0,0,250),
     "Top Left Thread":(0,0,250),
     "Top Right Thread":(0,0,250),
-    "Ring_4":(0,0,250),
-    "Ring_5":(0,0,250),
-    "Ring_6":(0,0,250),
-    "Ring_7":(0,0,250),
+    
 }
 #BG = (0,0,0)
 #GRASPER = (255,0,0)

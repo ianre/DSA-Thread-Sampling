@@ -65,9 +65,9 @@ RGB = {
     # PolyLines: the keys match with elements in list polyLineNames
     "Thread Polyline":(0,0,250),
     "Bottom Left Thread":(0,0,250),
-    "Bottom Right Thread":(0,0,250),
+    "Bottom Right Thread":(0,250,0),
     "Top Left Thread":(0,0,250),
-    "Top Right Thread":(0,0,250),
+    "Top Right Thread":(0,250,0),
     
 }
 #BG = (0,0,0)
@@ -88,7 +88,7 @@ def main():
         print("Available task labels: ", available_labels)
         sys.exit()
     ''' 
-    task = "Needle_Passing"
+    task = "Knot_Tying"
     I = ImageProcessor(task)
     I.DrawLabels()
     quit();    
@@ -171,7 +171,9 @@ class ImageProcessor:
         img = Image.open(imageSource)
         #! draw = ImageDraw.Draw(img)
         draw = ImageDraw.Draw(img, "RGBA")   
-        '''        
+
+        self.flush_BG(img,draw)
+           
         polyNames_TL = []
         polyLines_TL = []
         polyNames_TR = []
@@ -205,8 +207,7 @@ class ImageProcessor:
         if(len(polyLines_BR)>0):                
             kp = [polyLines_BR[0][0], polyLines_BR[0][1]]             
             self.DrawThread(polyLines_BR, polyNames_BR, kp, draw, font)
-        '''
-        self.flush_BG(img,draw)
+
         self.DrawPolygons(polygons,polyNames,draw,font)
 
         img.save(target)

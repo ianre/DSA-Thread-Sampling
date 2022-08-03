@@ -33,5 +33,8 @@ win-env
 Needle_Passing/images/
 Needle_Passing/mask_output/
 Peg_Transfer/
+Knot_Tying/Annotations/
+Knot_Tying/images/
+Knot_Tying/mask_output/
 temp.py
 todo.txt

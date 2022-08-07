@@ -50,24 +50,24 @@ RGB = {
     "BG":(0,0,0), 
 
     # Polygons: the keys match exactly with elements in the list polyNmes
-    "Left Grasper":(250,0,0),
-    "Right Grasper":(0,250,0),
-    "Ring_4":(0,0,250),
-    "Ring_5":(0,0,250),
-    "Ring_6":(0,0,250),
-    "Ring_7":(0,0,250),
-    "Needle Mask":(0,0,250),
+    "Left Grasper":(0,0,0),
+    "Right Grasper":(0,0,0),
+    "Ring_4":(0,0,0),
+    "Ring_5":(0,0,0),
+    "Ring_6":(0,0,0),
+    "Ring_7":(0,0,0),
+    "Needle Mask":(0,0,0),
 
     # Keypoints: the keys match with elements in list kpNames
-    "Needle End":(0,0,250),
-    "Needle Tip":(0,0,250),
+    "Needle End":(0,0,0),
+    "Needle Tip":(0,0,0),
 
     # PolyLines: the keys match with elements in list polyLineNames
     "Thread Polyline":(0,0,250),
     "Bottom Left Thread":(0,0,250),
-    "Bottom Right Thread":(0,250,0),
+    "Bottom Right Thread":(0,0,250),
     "Top Left Thread":(0,0,250),
-    "Top Right Thread":(0,250,0),
+    "Top Right Thread":(0,0,250),
     
 }
 #BG = (0,0,0)
@@ -655,7 +655,7 @@ class ImageProcessor:
                 draw.line(( polyLines[i][k],
                             polyLines[i][k+1],
                             polyLines[i][k+2],
-                            polyLines[i][k+3]), fill=c, width=9) 
+                            polyLines[i][k+3]), fill=c, width=2) 
                 x = polyLines[i][k]
                 y = polyLines[i][k+1]          
                 leftUpPoint = (x-2, y-2)

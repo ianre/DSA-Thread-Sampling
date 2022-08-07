@@ -3,17 +3,20 @@ Pea_on_a_Peg/
 __pycache__/
 cogito_images/
 cogito_labels/
-*/annotations_pre/
-*/images_pre/
 __pycache__/
 cogito_images/
 cogito_labels/
-Pea_on_a_Peg/
 slicing_records/
 thread_samples/
-Post_and_Sleeve/
+temp.py
+todo.txt
+proc_visual.py
+Thread_Sampling.py
+win-env
 
 
+*/images_pre/
+*/annotations_pre/
 */images_pre/
 */labeled_images/
 */labeled_images_5_6/
@@ -21,20 +24,24 @@ Post_and_Sleeve/
 */output_ext/
 */output/
 */output_non_interpolation/
-proc_visual.py
-Thread_Sampling.py
-win-env
 */vis_context_labels_copy/
 */ctx_ian/
 */ctx_kay/
 */ctx_consensus/
 */ctx_output/
 */vis_context_labels_null_state - Copy/
+
+Peg_Transfer/
+
 Needle_Passing/images/
 Needle_Passing/mask_output/
-Peg_Transfer/
+
 Knot_Tying/Annotations/
 Knot_Tying/images/
 Knot_Tying/mask_output/
-temp.py
-todo.txt
+
+Suturing/annotations/
+Suturing/annotations_pre/
+Suturing
+
+Needle_Passing/mask_output/*

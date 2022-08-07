@@ -64,7 +64,7 @@ def main():
     '''
 
     #print(task)
-    task = "Suturing" #then suturing to b done w/ jigs
+    task = "Knot_Tying" #then suturing to b done w/ jigs
     I = Iterator(task)
     #I.fixStates()
     #I.poll()
@@ -202,17 +202,25 @@ class Iterator:
         count = 0
         intersections = []
         IOU_frame = []
-        for root, dirs, files in os.walk(self.surgeon):
+        for root, dirs, files in os.walk(self.surgeon): # self.surgeon
             for file in files:
                 if("99"  in file):
                     continue
                 #print(file)
                 count=count+1
                 out_file = os.path.join(self.outputDir, file)
+
+                #! IOU Consensus vs Surgeon
+                '''
                 pred_file = os.path.join(self.consensus, file)
                 consensus_file = os.path.join(self.surgeon, file)
+                '''
                 
-                #print("\tFile: ",file)
+                #! IOU Automated vs Consensus
+                pred_file = os.path.join(self.surgeon, file)
+                consensus_file = os.path.join(self.consensus, file)
+
+
                 
                 pred_lines = []
                 with open(pred_file) as pred_data:
@@ -245,8 +253,8 @@ class Iterator:
                     pred = line.replace("\n","")
                     consensus_line = consensus_lines_u[i].replace("\n","")
 
-                    p_num =[int(x) for x in pred.split(" ")[1:5]]
-                    con_num = [int(x) for x in consensus_line.split(" ")[1:5]]
+                    p_num =[int(x)+1 for x in pred.split(" ")[1:5]]
+                    con_num = [int(x)+1 for x in consensus_line.split(" ")[1:5]]
                     frame_IOU.append(1-distance.jaccard(p_num,con_num))
 
                     p_l = "".join(pred.split(" ")[1:5])

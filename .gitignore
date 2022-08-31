@@ -17,7 +17,8 @@ win-env
 */images_pre/
 */annotations_pre/
 */images_pre/
-*/labeled_images/
+Knot_Tying/labeled_images/
+Needle_Passing/labeled_images/
 */labeled_images_5_6/
 */kinematics/
 */output_ext/
